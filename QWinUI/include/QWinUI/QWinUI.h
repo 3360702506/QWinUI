@@ -6,6 +6,8 @@
 #include "QWinUIGlobal.h"
 #include "QWinUIWidget.h"
 #include "QWinUITheme.h"
+#include "QWinUIIconManager.h"
+#include "QWinUIIconConstants.h"
 #include "QWinUIAnimation.h"
 #include "QWinUIBlurEffect.h"
 
@@ -14,6 +16,8 @@
 #include "Controls/QWinUIToggleSwitch.h"
 #include "Controls/QWinUIToolTip.h"
 #include "Controls/QWinUIProgressBar.h"
+#include "Controls/QWinUIProgressRing.h"
+#include "Controls/QWinUIIcon.h"
 #include "Controls/QWinUIScrollView.h"
 #include "Controls/QWinUIScrollBar.h"
 #include "Controls/QWinUINotification.h"

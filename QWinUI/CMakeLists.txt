@@ -12,7 +12,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # 查找Qt6
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Svg SvgWidgets)
 
 # 启用Qt的MOC、UIC、RCC
 set(CMAKE_AUTOMOC ON)
@@ -31,6 +31,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(QWINUI_SOURCES
     src/QWinUIWidget.cpp
     src/QWinUITheme.cpp
+    src/QWinUIIconManager.cpp
     src/QWinUIAnimation.cpp
     src/QWinUIBlurEffect.cpp
     src/QWinUI.cpp
@@ -40,6 +41,8 @@ set(QWINUI_SOURCES
     src/Controls/QWinUIToggleSwitch.cpp
     src/Controls/QWinUIToolTip.cpp
     src/Controls/QWinUIProgressBar.cpp
+    src/Controls/QWinUIProgressRing.cpp
+    src/Controls/QWinUIIcon.cpp
     src/Controls/QWinUIScrollView.cpp
     src/Controls/QWinUIScrollBar.cpp
     src/Controls/QWinUINotification.cpp
@@ -51,6 +54,8 @@ set(QWINUI_HEADERS
     include/QWinUI/QWinUIGlobal.h
     include/QWinUI/QWinUIWidget.h
     include/QWinUI/QWinUITheme.h
+    include/QWinUI/QWinUIIconManager.h
+    include/QWinUI/QWinUIIconConstants.h
     include/QWinUI/QWinUIAnimation.h
     include/QWinUI/QWinUIBlurEffect.h
     include/QWinUI/QWinUI.h
@@ -60,14 +65,21 @@ set(QWINUI_HEADERS
     include/QWinUI/Controls/QWinUIToggleSwitch.h
     include/QWinUI/Controls/QWinUIToolTip.h
     include/QWinUI/Controls/QWinUIProgressBar.h
+    include/QWinUI/Controls/QWinUIProgressRing.h
+    include/QWinUI/Controls/QWinUIIcon.h
     include/QWinUI/Controls/QWinUIScrollView.h
     include/QWinUI/Controls/QWinUIScrollBar.h
     include/QWinUI/Controls/QWinUINotification.h
     include/QWinUI/Layouts/QWinUIFlowLayout.h
 )
 
+# 资源文件
+set(QWINUI_RESOURCES
+    resources/icons.qrc
+)
+
 # 创建库
-add_library(QWinUI SHARED ${QWINUI_SOURCES} ${QWINUI_HEADERS})
+add_library(QWinUI SHARED ${QWINUI_SOURCES} ${QWINUI_HEADERS} ${QWINUI_RESOURCES})
 
 # 设置库的属性
 set_target_properties(QWinUI PROPERTIES
@@ -80,6 +92,8 @@ set_target_properties(QWinUI PROPERTIES
 target_link_libraries(QWinUI
     Qt6::Core
     Qt6::Widgets
+    Qt6::Svg
+    Qt6::SvgWidgets
 )
 
 # Windows特定设置

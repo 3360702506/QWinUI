@@ -5,7 +5,13 @@
 #include <QWinUI/Controls/QWinUIToggleSwitch.h>
 #include <QWinUI/Controls/QWinUIScrollView.h>
 #include <QWinUI/Controls/QWinUINotification.h>
+#include <QWinUI/Controls/QWinUIProgressRing.h>
+#include <QWinUI/Controls/QWinUIIcon.h>
+#include <QWinUI/QWinUIIconConstants.h>
+// #include <QWinUI/Controls/QWinUIIconButton.h> // Temporarily disabled
+#include <QWinUI/QWinUIIconManager.h>
 #include <QMessageBox>
+#include <QApplication>
 
 Widget::Widget(QWidget *parent)
     : QWinUIWidget(parent)
@@ -124,6 +130,124 @@ Widget::Widget(QWidget *parent)
     });
     m_layout->addWidget(notificationBtn);
     notificationBtn->setToolTipText("测试系统通知功能\nWindows: 使用原生Toast通知\n其他平台: 使用回退通知窗口");
+
+    // ProgressRing测试
+    QHBoxLayout* progressRingLayout = new QHBoxLayout();
+
+    // 确定进度环
+    QWinUIProgressRing* determinateRing = new QWinUIProgressRing(this);
+    determinateRing->setValue(50);
+    determinateRing->setToolTipText("确定进度环\n当前进度: 50%");
+    progressRingLayout->addWidget(determinateRing);
+
+    // 不确定进度环
+    QWinUIProgressRing* indeterminateRing = new QWinUIProgressRing(this);
+    indeterminateRing->setIsIndeterminate(true);
+    indeterminateRing->setToolTipText("不确定进度环\n正在加载...");
+    progressRingLayout->addWidget(indeterminateRing);
+
+    // 大尺寸进度环
+    QWinUIProgressRing* largeRing = new QWinUIProgressRing(this);
+    largeRing->setFixedSize(48, 48);
+    largeRing->setRingThickness(6);
+    largeRing->setValue(75);
+    largeRing->setToolTipText("大尺寸进度环\n当前进度: 75%");
+    progressRingLayout->addWidget(largeRing);
+
+    // 非活动进度环
+    QWinUIProgressRing* inactiveRing = new QWinUIProgressRing(this);
+    inactiveRing->setValue(25);
+    inactiveRing->setIsActive(false);
+    inactiveRing->setToolTipText("非活动进度环\n已暂停");
+    progressRingLayout->addWidget(inactiveRing);
+
+    progressRingLayout->addStretch();
+    m_layout->addLayout(progressRingLayout);
+
+    // 进度环控制按钮
+    QWinUIButton* progressRingBtn = new QWinUIButton("更新进度环", this);
+    connect(progressRingBtn, &QWinUIButton::clicked, [=]() {
+        static int progress = 0;
+        progress = (progress + 25) % 125;
+        determinateRing->setValue(progress);
+        largeRing->setValue(progress);
+        inactiveRing->setValue(progress);
+
+        QString tooltip = QString("确定进度环\n当前进度: %1%").arg(progress);
+        determinateRing->setToolTipText(tooltip);
+
+        tooltip = QString("大尺寸进度环\n当前进度: %1%").arg(progress);
+        largeRing->setToolTipText(tooltip);
+    });
+    m_layout->addWidget(progressRingBtn);
+    progressRingBtn->setToolTipText("点击更新进度环的进度值\n演示进度变化动画");
+
+    // 图标系统测试
+    QHBoxLayout* iconLayout = new QHBoxLayout();
+
+    // 不再使用图标管理器，直接使用资源路径
+
+    // 基础图标测试
+    QWinUIIcon* basicIcon = new QWinUIIcon(this);
+    basicIcon->setIconName("solid/house");
+    basicIcon->setIconSize(24, 24);
+    basicIcon->setToolTipText("基础图标\n支持缩放和着色");
+    iconLayout->addWidget(basicIcon);
+
+    // 彩色图标测试
+    QWinUIIcon* coloredIcon = new QWinUIIcon(this);
+    coloredIcon->setIconName("solid/heart");
+    coloredIcon->setIconSize(32, 32);
+    coloredIcon->setIconColor(QColor(255, 100, 100));
+    coloredIcon->setUseThemeColor(false);
+    coloredIcon->setToolTipText("彩色图标\n自定义颜色");
+    iconLayout->addWidget(coloredIcon);
+
+    // 旋转图标测试
+    QWinUIIcon* rotatingIcon = new QWinUIIcon(this);
+    rotatingIcon->setIconName("solid/arrows-rotate");
+    rotatingIcon->setIconSize(28, 28);
+    rotatingIcon->setToolTipText("旋转图标\n点击开始旋转");
+    connect(rotatingIcon, &QWinUIIcon::clicked, [=]() {
+        rotatingIcon->startSpinAnimation(2000);
+    });
+    iconLayout->addWidget(rotatingIcon);
+
+    // 动态SVG测试
+    QWinUIIcon* dynamicIcon = new QWinUIIcon(this);
+    QString simpleSvg = R"(
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" fill="currentColor"/>
+            <text x="12" y="16" text-anchor="middle" fill="white" font-size="8">SVG</text>
+        </svg>
+    )";
+    dynamicIcon->loadSvgFromString(simpleSvg);
+    dynamicIcon->setIconSize(32, 32);
+    dynamicIcon->setToolTipText("动态加载的SVG\n从字符串创建");
+    iconLayout->addWidget(dynamicIcon);
+
+    iconLayout->addStretch();
+    m_layout->addLayout(iconLayout);
+
+    // 图标按钮测试 (暂时禁用)
+    // QHBoxLayout* iconButtonLayout = new QHBoxLayout();
+    // ... 图标按钮代码暂时移除 ...
+
+    // 图标控制按钮
+    QWinUIButton* iconControlBtn = new QWinUIButton("切换图标主题", this);
+    connect(iconControlBtn, &QWinUIButton::clicked, [=]() {
+        static bool useTheme = true;
+        useTheme = !useTheme;
+
+        basicIcon->setUseThemeColor(useTheme);
+        coloredIcon->setUseThemeColor(useTheme);
+        rotatingIcon->setUseThemeColor(useTheme);
+        dynamicIcon->setUseThemeColor(useTheme);
+
+        iconControlBtn->setText(useTheme ? "切换图标主题" : "使用自定义颜色");
+    });
+    m_layout->addWidget(iconControlBtn);
+    iconControlBtn->setToolTipText("切换图标颜色主题\n演示主题联动功能\n悬停图标查看强调色效果");
 
     // 添加弹性空间
     QSpacerItem* spacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
