@@ -37,6 +37,7 @@ QWinUIWidget::QWinUIWidget(QWidget *parent)
     , m_fadeProgress(0.0)
     , m_toolTip(nullptr)
     , m_toolTipEnabled(true)
+    , m_clipPathValid(false)
 {
     initializeWidget();
 }
@@ -86,7 +87,7 @@ void QWinUIWidget::initializeWidget()
 
     // 初始化主题切换动画定时器
     m_transitionTimer = new QTimer(this);
-    m_transitionTimer->setInterval(16); // 约60FPS
+    m_transitionTimer->setInterval(33); // 约30FPS，减少CPU占用
     connect(m_transitionTimer, &QTimer::timeout, this, &QWinUIWidget::updateThemeTransition);
 }
 
@@ -126,6 +127,7 @@ void QWinUIWidget::setCornerRadius(int radius)
 {
     if (m_cornerRadius != radius) {
         m_cornerRadius = radius;
+        m_clipPathValid = false; // 使缓存失效
         emit cornerRadiusChanged(radius);
         update();
     }
@@ -457,6 +459,13 @@ void QWinUIWidget::focusOutEvent(QFocusEvent* event)
     QWidget::focusOutEvent(event);
 }
 
+void QWinUIWidget::resizeEvent(QResizeEvent* event)
+{
+    // 尺寸变化时使缓存失效
+    m_clipPathValid = false;
+    QWidget::resizeEvent(event);
+}
+
 void QWinUIWidget::changeEvent(QEvent* event)
 {
     // 禁用状态变化，防止触发重绘
@@ -478,9 +487,13 @@ void QWinUIWidget::onThemeChanged()
 
 void QWinUIWidget::onThemeChangedInternal()
 {
-    onThemeChanged();
-    emit themeChanged();
-    update();
+    // 只有在没有进行主题切换动画时才立即更新
+    if (!m_isThemeTransitioning) {
+        onThemeChanged();
+        emit themeChanged();
+        update();
+    }
+    // 如果正在进行动画，onThemeChanged 会在动画完成后调用
 }
 
 void QWinUIWidget::onAnimationFinished()
@@ -602,7 +615,7 @@ void QWinUIWidget::startThemeTransition(QWinUITransitionMode mode, const QPoint&
         if (m_oldThemeMode == QWinUIThemeMode::Dark) {
             m_oldBackgroundColor = QColor(32, 32, 32);
         } else {
-            m_oldBackgroundColor = QColor(255, 255, 255);
+            m_oldBackgroundColor = QColor(243, 243, 243);
         }
 
         // 获取目标背景颜色
@@ -610,7 +623,7 @@ void QWinUIWidget::startThemeTransition(QWinUITransitionMode mode, const QPoint&
         if (currentMode == QWinUIThemeMode::Dark) {
             m_newBackgroundColor = QColor(32, 32, 32);
         } else {
-            m_newBackgroundColor = QColor(255, 255, 255);
+            m_newBackgroundColor = QColor(243, 243, 243);
         }
     }
 
@@ -645,15 +658,15 @@ void QWinUIWidget::updateThemeTransition()
     bool animationComplete = false;
 
     if (m_transitionMode == RippleTransition) {
-        // 圆圈扩散动画更新
-        double radiusIncrement = m_maxTransitionRadius / 40.0; // 约0.67秒完成动画
+        // 圆圈扩散动画更新 - 优化：减少动画步数，提高每步增量
+        double radiusIncrement = m_maxTransitionRadius / 20.0; // 约0.67秒完成动画，但步数减半
         m_transitionRadius += radiusIncrement;
 
         // 检测圆圈是否接触到当前控件（使用全局坐标）
         QPoint globalCenter = mapToGlobal(m_transitionCenter);
         if (!m_hasBeenTouched && isCircleTouchingWidget(globalCenter, m_transitionRadius)) {
             m_hasBeenTouched = true; // 标记为已接触
-            update();
+            // 优化：只在状态改变时才更新
         }
 
         // 传播动画到所有子控件
@@ -683,8 +696,8 @@ void QWinUIWidget::updateThemeTransition()
         }
 
     } else if (m_transitionMode == FadeTransition) {
-        // 颜色过渡动画更新
-        double fadeIncrement = 1.0 / 30.0; // 约0.5秒完成动画
+        // 颜色过渡动画更新 - 优化：减少更新频率
+        double fadeIncrement = 1.0 / 15.0; // 约0.5秒完成动画，但步数减半
         m_fadeProgress += fadeIncrement;
 
         // 传播动画到所有子控件
@@ -726,9 +739,21 @@ void QWinUIWidget::updateThemeTransition()
                 childWidget->update();
             }
         }
+
+        // 动画完成后，调用主题改变处理
+        onThemeChanged();
+        emit themeChanged();
+
+        // 发送全局主题改变信号（只在顶级窗口发送，避免重复）
+        if (!parent() || !qobject_cast<QWinUIWidget*>(parent())) {
+            QWinUITheme* theme = QWinUITheme::getInstance();
+            if (theme) {
+                emit theme->themeChanged();
+            }
+        }
     }
 
-    // 触发重绘
+    // 触发重绘 - 恢复原有逻辑确保动画流畅
     update();
 }
 
@@ -745,14 +770,14 @@ void QWinUIWidget::drawThemeTransition(QPainter* painter)
     if (m_oldThemeMode == QWinUIThemeMode::Dark) {
         oldBgColor = QColor(32, 32, 32);
     } else {
-        oldBgColor = QColor(255, 255, 255);
+        oldBgColor = QColor(243, 243, 243); // 使用正确的浅色主题背景色
     }
 
     QColor newBgColor;
     if (currentMode == QWinUIThemeMode::Dark) {
         newBgColor = QColor(32, 32, 32);
     } else {
-        newBgColor = QColor(255, 255, 255);
+        newBgColor = QColor(243, 243, 243); // 使用正确的浅色主题背景色
     }
 
     if (m_transitionMode == RippleTransition) {
@@ -779,34 +804,34 @@ void QWinUIWidget::drawRippleTransition(QPainter* painter, const QColor& oldColo
     if (m_hasBeenTouched && m_transitionRadius > 0) {
         painter->save();
 
-        // 创建圆形路径
-        QPainterPath circlePath;
-        circlePath.addEllipse(m_transitionCenter.x() - m_transitionRadius,
-                             m_transitionCenter.y() - m_transitionRadius,
-                             m_transitionRadius * 2,
-                             m_transitionRadius * 2);
+        // 优化：简化绘制逻辑，减少路径计算
+        QRectF circleRect(m_transitionCenter.x() - m_transitionRadius,
+                         m_transitionCenter.y() - m_transitionRadius,
+                         m_transitionRadius * 2,
+                         m_transitionRadius * 2);
 
-        // 创建控件边界路径
-        QPainterPath widgetPath;
+        // 优化：使用缓存的裁剪路径
         if (m_cornerRadius > 0) {
-            widgetPath.addRoundedRect(rect(), m_cornerRadius, m_cornerRadius);
+            // 检查缓存是否有效
+            if (!m_clipPathValid || m_lastRect != rect()) {
+                m_cachedClipPath = QPainterPath();
+                m_cachedClipPath.addRoundedRect(rect(), m_cornerRadius, m_cornerRadius);
+                m_lastRect = rect();
+                m_clipPathValid = true;
+            }
+            painter->setClipPath(m_cachedClipPath);
         } else {
-            widgetPath.addRect(rect());
+            painter->setClipRect(rect());
         }
 
-        // 计算交集 - 圆圈覆盖的控件区域
-        QPainterPath intersectionPath = circlePath.intersected(widgetPath);
+        // 优化：使用简单的径向渐变，减少复杂的路径交集计算
+        QRadialGradient gradient(m_transitionCenter, m_transitionRadius * 0.8);
+        gradient.setColorAt(0.0, newColor);
+        gradient.setColorAt(1.0, newColor);
 
-        // 绘制新主题颜色（带渐变效果）
-        if (!intersectionPath.isEmpty()) {
-            // 创建径向渐变
-            QRadialGradient gradient(m_transitionCenter, m_transitionRadius);
-            gradient.setColorAt(0.0, newColor);
-            gradient.setColorAt(0.9, newColor);
-            gradient.setColorAt(1.0, oldColor); // 边缘混合
-
-            painter->fillPath(intersectionPath, QBrush(gradient));
-        }
+        painter->setBrush(QBrush(gradient));
+        painter->setPen(Qt::NoPen);
+        painter->drawEllipse(circleRect);
 
         painter->restore();
     }

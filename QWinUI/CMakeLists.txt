@@ -38,14 +38,21 @@ set(QWINUI_SOURCES
     src/Controls/QWinUITextBlock.cpp
     src/Controls/QWinUIRichTextBlock.cpp
     src/Controls/QWinUIButton.cpp
+    src/Controls/QWinUIIconButton.cpp
     src/Controls/QWinUIToggleSwitch.cpp
     src/Controls/QWinUIToolTip.cpp
     src/Controls/QWinUIProgressBar.cpp
     src/Controls/QWinUIProgressRing.cpp
     src/Controls/QWinUIIcon.cpp
+    src/Controls/QWinUIAcrylicBrush.cpp
+    src/Controls/QWinUIRichEditBox.cpp
+    src/Controls/QWinUITextInput.cpp
+    src/Controls/QWinUITextBox.cpp
+    src/Controls/QWinUIPasswordBox.cpp
     src/Controls/QWinUIScrollView.cpp
     src/Controls/QWinUIScrollBar.cpp
     src/Controls/QWinUINotification.cpp
+    src/Controls/QWinUIAppBarSeparator.cpp
     src/Layouts/QWinUIFlowLayout.cpp
 )
 
@@ -56,20 +63,28 @@ set(QWINUI_HEADERS
     include/QWinUI/QWinUITheme.h
     include/QWinUI/QWinUIIconManager.h
     include/QWinUI/QWinUIIconConstants.h
+    include/QWinUI/QWinUIFluentIcons.h
     include/QWinUI/QWinUIAnimation.h
     include/QWinUI/QWinUIBlurEffect.h
     include/QWinUI/QWinUI.h
     include/QWinUI/Controls/QWinUITextBlock.h
     include/QWinUI/Controls/QWinUIRichTextBlock.h
     include/QWinUI/Controls/QWinUIButton.h
+    include/QWinUI/Controls/QWinUIIconButton.h
     include/QWinUI/Controls/QWinUIToggleSwitch.h
     include/QWinUI/Controls/QWinUIToolTip.h
     include/QWinUI/Controls/QWinUIProgressBar.h
     include/QWinUI/Controls/QWinUIProgressRing.h
     include/QWinUI/Controls/QWinUIIcon.h
+    include/QWinUI/Controls/QWinUIAcrylicBrush.h
+    include/QWinUI/Controls/QWinUIRichEditBox.h
+    include/QWinUI/Controls/QWinUITextInput.h
+    include/QWinUI/Controls/QWinUITextBox.h
+    include/QWinUI/Controls/QWinUIPasswordBox.h
     include/QWinUI/Controls/QWinUIScrollView.h
     include/QWinUI/Controls/QWinUIScrollBar.h
     include/QWinUI/Controls/QWinUINotification.h
+    include/QWinUI/Controls/QWinUIAppBarSeparator.h
     include/QWinUI/Layouts/QWinUIFlowLayout.h
 )
 

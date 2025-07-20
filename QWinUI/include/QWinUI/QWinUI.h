@@ -8,19 +8,28 @@
 #include "QWinUITheme.h"
 #include "QWinUIIconManager.h"
 #include "QWinUIIconConstants.h"
+#include "QWinUIFluentIcons.h"
 #include "QWinUIAnimation.h"
 #include "QWinUIBlurEffect.h"
 
 // Controls
 #include "Controls/QWinUIButton.h"
+#include "Controls/QWinUIIconButton.h"
 #include "Controls/QWinUIToggleSwitch.h"
 #include "Controls/QWinUIToolTip.h"
 #include "Controls/QWinUIProgressBar.h"
 #include "Controls/QWinUIProgressRing.h"
 #include "Controls/QWinUIIcon.h"
+#include "Controls/QWinUIAcrylicBrush.h"
+#include "Controls/QWinUIRichEditBox.h"
+#include "Controls/QWinUITextInput.h"
+#include "Controls/QWinUITextBox.h"
+#include "Controls/QWinUIPasswordBox.h"
 #include "Controls/QWinUIScrollView.h"
 #include "Controls/QWinUIScrollBar.h"
 #include "Controls/QWinUINotification.h"
+#include "Controls/QWinUIAppBarSeparator.h"
+#include "Controls/QWinUIAppBarSeparator.h"
 
 // Layouts
 #include "Layouts/QWinUIFlowLayout.h"

@@ -165,19 +165,20 @@ void QWinUIToggleSwitch::onThemeChanged()
 
 void QWinUIToggleSwitch::paintEvent(QPaintEvent* event)
 {
-    Q_UNUSED(event)
-    
+    // 首先调用父类的paintEvent来处理主题切换动画
+    QWinUIWidget::paintEvent(event);
+
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    
+
     QRect switchRect(4, (height() - TRACK_HEIGHT) / 2, TRACK_WIDTH, TRACK_HEIGHT);
-    
+
     // 绘制轨道
     drawTrack(&painter, switchRect);
-    
+
     // 绘制滑块
     drawThumb(&painter, switchRect);
-    
+
     // 绘制内容文本
     QRect contentRect(TRACK_WIDTH + CONTENT_SPACING + 4, 0, width() - TRACK_WIDTH - CONTENT_SPACING - 8, height());
     drawContent(&painter, contentRect);

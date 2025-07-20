@@ -1,4 +1,5 @@
 #include "QWinUI/QWinUITheme.h"
+#include "QWinUI/QWinUIWidget.h"
 #include <QApplication>
 #include <QStyleHints>
 #include <QStandardPaths>
@@ -88,6 +89,8 @@ QWinUITheme::QWinUITheme(QObject* parent)
     , m_followSystemTheme(true)
     , m_isDarkMode(false)
     , m_settings(nullptr)
+    , m_themeTransitionEnabled(true)
+    , m_themeTransitionMode(0) // 0 = RippleTransition
 {
     initializeTheme();
 }
@@ -228,8 +231,13 @@ QWinUIThemeMode QWinUITheme::themeMode() const
 void QWinUITheme::setThemeMode(QWinUIThemeMode mode)
 {
     if (m_themeMode != mode) {
+        // 在改变主题之前，先启动动画
+        if (m_themeTransitionEnabled) {
+            startThemeTransitionForAllWidgets();
+        }
+
         m_themeMode = mode;
-        
+
         if (mode == QWinUIThemeMode::Auto) {
             if (!m_followSystemTheme) {
                 m_followSystemTheme = true;
@@ -241,7 +249,7 @@ void QWinUITheme::setThemeMode(QWinUIThemeMode mode)
                 m_followSystemTheme = false;
                 disconnectFromSystemTheme();
             }
-            
+
             bool newDarkMode = (mode == QWinUIThemeMode::Dark);
             if (m_isDarkMode != newDarkMode) {
                 m_isDarkMode = newDarkMode;
@@ -251,10 +259,15 @@ void QWinUITheme::setThemeMode(QWinUIThemeMode mode)
                     loadLightTheme();
                 }
                 updateAccentColorVariants();
-                emit themeChanged();
+
+                // 如果没有启用动画，直接发送主题改变信号
+                if (!m_themeTransitionEnabled) {
+                    emit themeChanged();
+                }
+                // 如果启用了动画，themeChanged 信号会在动画完成后发送
             }
         }
-        
+
         emit themeModeChanged(mode);
     }
 }
@@ -283,15 +296,100 @@ void QWinUITheme::setFollowSystemTheme(bool follow)
 {
     if (m_followSystemTheme != follow) {
         m_followSystemTheme = follow;
-        
+
         if (follow) {
             connectToSystemTheme();
             onSystemThemeChanged();
         } else {
             disconnectFromSystemTheme();
         }
-        
+
         emit followSystemThemeChanged(follow);
+    }
+}
+
+bool QWinUITheme::isThemeTransitionEnabled() const
+{
+    return m_themeTransitionEnabled;
+}
+
+void QWinUITheme::setThemeTransitionEnabled(bool enabled)
+{
+    m_themeTransitionEnabled = enabled;
+}
+
+int QWinUITheme::themeTransitionMode() const
+{
+    return m_themeTransitionMode;
+}
+
+void QWinUITheme::setThemeTransitionMode(int mode)
+{
+    m_themeTransitionMode = mode;
+}
+
+void QWinUITheme::setThemeModeWithTransition(QWinUIThemeMode mode, const QPoint& rippleCenter)
+{
+    if (m_themeMode == mode) {
+        return; // 主题模式没有变化，无需切换
+    }
+
+    // 如果启用了动画，触发所有 QWinUIWidget 的主题切换动画
+    if (m_themeTransitionEnabled) {
+        // 获取所有顶级 QWinUIWidget
+        QList<QWidget*> topLevelWidgets = QApplication::topLevelWidgets();
+        for (QWidget* widget : topLevelWidgets) {
+            QWinUIWidget* winuiWidget = qobject_cast<QWinUIWidget*>(widget);
+            if (winuiWidget) {
+                // 计算相对于每个窗口的涟漪中心
+                QPoint localRippleCenter = rippleCenter;
+                if (!rippleCenter.isNull()) {
+                    // 如果提供了全局坐标，转换为窗口本地坐标
+                    localRippleCenter = winuiWidget->mapFromGlobal(rippleCenter);
+                    // 如果转换后的坐标在窗口外，使用窗口中心
+                    if (!winuiWidget->rect().contains(localRippleCenter)) {
+                        localRippleCenter = winuiWidget->rect().center();
+                    }
+                } else {
+                    // 如果没有提供坐标，使用窗口中心
+                    localRippleCenter = winuiWidget->rect().center();
+                }
+
+                // 启动主题切换动画
+                winuiWidget->startThemeTransition(static_cast<QWinUIWidget::QWinUITransitionMode>(m_themeTransitionMode), localRippleCenter);
+            }
+        }
+    }
+
+    // 设置新的主题模式
+    setThemeMode(mode);
+}
+
+void QWinUITheme::startThemeTransitionForAllWidgets()
+{
+    // 获取所有顶级 QWinUIWidget
+    QList<QWidget*> topLevelWidgets = QApplication::topLevelWidgets();
+    for (QWidget* widget : topLevelWidgets) {
+        QWinUIWidget* winuiWidget = qobject_cast<QWinUIWidget*>(widget);
+        if (winuiWidget) {
+            // 获取智能的涟漪中心位置
+            QPoint rippleCenter;
+
+            // 尝试获取当前鼠标位置
+            QPoint globalMousePos = QCursor::pos();
+            QPoint localMousePos = winuiWidget->mapFromGlobal(globalMousePos);
+
+            // 如果鼠标在当前控件内，使用鼠标位置
+            if (winuiWidget->rect().contains(localMousePos)) {
+                rippleCenter = localMousePos;
+            } else {
+                // 否则使用控件中心
+                rippleCenter = winuiWidget->rect().center();
+            }
+
+            // 启动主题切换动画
+            winuiWidget->startThemeTransition(static_cast<QWinUIWidget::QWinUITransitionMode>(m_themeTransitionMode), rippleCenter);
+        }
     }
 }
 

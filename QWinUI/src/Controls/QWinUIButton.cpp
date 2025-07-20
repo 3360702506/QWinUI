@@ -148,75 +148,84 @@ QSize QWinUIButton::minimumSizeHint() const
 
 void QWinUIButton::paintEvent(QPaintEvent* event)
 {
-    Q_UNUSED(event)
+    // 首先调用父类的paintEvent来处理主题切换动画
+    QWinUIWidget::paintEvent(event);
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
     QRect buttonRect = rect();
 
-    // 获取基础颜色
-    QColor bgColor = getBackgroundColor();
-    QColor borderColor = getBorderColor();
-    QColor textColor = getTextColor();
+    // 只有在没有主题切换动画时才绘制背景
+    if (!isThemeTransitioning()) {
+        // 获取基础颜色
+        QColor bgColor = getBackgroundColor();
+        QColor borderColor = getBorderColor();
 
-    // 应用WinUI 3风格的悬浮和按下效果，使用动画进度
-    if (m_hoverProgress > 0.0) {
-        QColor hoverColor;
-        if (m_buttonStyle == Accent) {
-            hoverColor = QColor(32, 145, 240); // 更明显的亮蓝色
-        } else if (m_buttonStyle == Standard) {
-            bool isDark = isDarkMode();
-            hoverColor = isDark ? QColor(255, 255, 255, 28) : QColor(245, 245, 245); // 加强悬浮效果
-        } else if (m_buttonStyle == Subtle || m_buttonStyle == Hyperlink) {
-            // Subtle和Hyperlink样式在悬浮时显示背景
-            bool isDark = isDarkMode();
-            hoverColor = isDark ? QColor(255, 255, 255, 15) : QColor(0, 0, 0, 10); // 微妙的背景色
-        } else {
-            hoverColor = bgColor.lighter(115); // 其他样式也加强悬浮效果
+        // 应用WinUI 3风格的悬浮和按下效果，使用动画进度
+        if (m_hoverProgress > 0.0) {
+            QColor hoverColor;
+            if (m_buttonStyle == Accent) {
+                hoverColor = QColor(32, 145, 240); // 更明显的亮蓝色
+            } else if (m_buttonStyle == Standard) {
+                bool isDark = isDarkMode();
+                hoverColor = isDark ? QColor(255, 255, 255, 28) : QColor(245, 245, 245); // 加强悬浮效果
+            } else if (m_buttonStyle == Subtle || m_buttonStyle == Hyperlink) {
+                // Subtle和Hyperlink样式在悬浮时显示背景
+                bool isDark = isDarkMode();
+                hoverColor = isDark ? QColor(255, 255, 255, 15) : QColor(0, 0, 0, 10); // 微妙的背景色
+            } else {
+                hoverColor = bgColor.lighter(115); // 其他样式也加强悬浮效果
+            }
+
+            // 插值混合颜色
+            bgColor = QColor::fromRgbF(
+                bgColor.redF() + (hoverColor.redF() - bgColor.redF()) * m_hoverProgress,
+                bgColor.greenF() + (hoverColor.greenF() - bgColor.greenF()) * m_hoverProgress,
+                bgColor.blueF() + (hoverColor.blueF() - bgColor.blueF()) * m_hoverProgress,
+                bgColor.alphaF() + (hoverColor.alphaF() - bgColor.alphaF()) * m_hoverProgress
+            );
         }
 
-        // 插值混合颜色
-        bgColor = QColor::fromRgbF(
-            bgColor.redF() + (hoverColor.redF() - bgColor.redF()) * m_hoverProgress,
-            bgColor.greenF() + (hoverColor.greenF() - bgColor.greenF()) * m_hoverProgress,
-            bgColor.blueF() + (hoverColor.blueF() - bgColor.blueF()) * m_hoverProgress,
-            bgColor.alphaF() + (hoverColor.alphaF() - bgColor.alphaF()) * m_hoverProgress
-        );
+        // 按下时背景色不变，只通过边框和文字变化来表示按下状态
+        // WinUI 3 的按钮按下效果主要通过边框变淡和文字变淡来实现
+
+        // 绘制背景
+        painter.setBrush(bgColor);
+        painter.setPen(Qt::NoPen);
+        painter.drawRoundedRect(buttonRect, cornerRadius(), cornerRadius());
     }
 
-    // 按下时背景色不变，只通过边框和文字变化来表示按下状态
-    // WinUI 3 的按钮按下效果主要通过边框变淡和文字变淡来实现
+    // 获取文本颜色（无论是否在动画中都需要绘制文本）
+    QColor textColor = getTextColor();
 
+    // 只有在没有主题切换动画时才绘制边框
+    if (!isThemeTransitioning()) {
+        QColor borderColor = getBorderColor();
 
+        // 绘制边框 - WinUI 3风格：按下时底部边框变淡
+        if (borderColor.alpha() > 0) {
+            painter.setBrush(Qt::NoBrush);
 
-    // 绘制背景
-    painter.setBrush(bgColor);
-    painter.setPen(Qt::NoPen);
-    painter.drawRoundedRect(buttonRect, cornerRadius(), cornerRadius());
+            if (m_isPressed || m_pressProgress > 0.0) {
+                // 按下时：先绘制完整边框，然后用变淡的颜色重绘底部
+                painter.setPen(QPen(borderColor, 0.5));
+                painter.drawRoundedRect(buttonRect, cornerRadius(), cornerRadius());
 
-    // 绘制边框 - WinUI 3风格：按下时底部边框变淡
-    if (borderColor.alpha() > 0) {
-        painter.setBrush(Qt::NoBrush);
+                // 底部边框变淡效果 - 加强变淡程度
+                QColor fadedBorderColor = borderColor;
+                fadedBorderColor.setAlpha(static_cast<int>(borderColor.alpha() * (1.0 - 0.8 * m_pressProgress)));
 
-        if (m_isPressed || m_pressProgress > 0.0) {
-            // 按下时：先绘制完整边框，然后用变淡的颜色重绘底部
-            painter.setPen(QPen(borderColor, 0.5));
-            painter.drawRoundedRect(buttonRect, cornerRadius(), cornerRadius());
-
-            // 底部边框变淡效果 - 加强变淡程度
-            QColor fadedBorderColor = borderColor;
-            fadedBorderColor.setAlpha(static_cast<int>(borderColor.alpha() * (1.0 - 0.8 * m_pressProgress)));
-
-            painter.setPen(QPen(fadedBorderColor, 0.5));
-            // 重绘底部边框区域
-            int radius = cornerRadius();
-            QRect bottomRect = buttonRect.adjusted(radius/2, buttonRect.height()-2, -radius/2, 0);
-            painter.drawLine(bottomRect.bottomLeft(), bottomRect.bottomRight());
-        } else {
-            // 正常状态：绘制完整边框
-            painter.setPen(QPen(borderColor, 0.5));
-            painter.drawRoundedRect(buttonRect, cornerRadius(), cornerRadius());
+                painter.setPen(QPen(fadedBorderColor, 0.5));
+                // 重绘底部边框区域
+                int radius = cornerRadius();
+                QRect bottomRect = buttonRect.adjusted(radius/2, buttonRect.height()-2, -radius/2, 0);
+                painter.drawLine(bottomRect.bottomLeft(), bottomRect.bottomRight());
+            } else {
+                // 正常状态：绘制完整边框
+                painter.setPen(QPen(borderColor, 0.5));
+                painter.drawRoundedRect(buttonRect, cornerRadius(), cornerRadius());
+            }
         }
     }
 

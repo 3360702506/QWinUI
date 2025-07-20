@@ -5,6 +5,7 @@
 #include <QWidget>
 #include <QColor>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPropertyAnimation>
 #include <QGraphicsDropShadowEffect>
 #include <QTimer>
@@ -109,6 +110,7 @@ signals:
 protected:
     // 重写的事件处理
     void paintEvent(QPaintEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void enterEvent(QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
@@ -197,6 +199,11 @@ private:
     double m_fadeProgress; // 0.0 到 1.0 的过渡进度
     QColor m_oldBackgroundColor;
     QColor m_newBackgroundColor;
+
+    // 性能优化缓存
+    mutable QPainterPath m_cachedClipPath; // 缓存裁剪路径
+    mutable bool m_clipPathValid; // 裁剪路径是否有效
+    mutable QRect m_lastRect; // 上次的矩形，用于检测尺寸变化
 
     // ToolTip 相关
     QWinUIToolTip* m_toolTip;

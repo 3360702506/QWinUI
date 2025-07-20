@@ -7,8 +7,12 @@
 #include <QFont>
 #include <QMap>
 #include <QSettings>
+#include <QPoint>
 
 QT_BEGIN_NAMESPACE
+
+// 前向声明
+class QWinUIWidget;
 
 class QWINUI_EXPORT QWinUITheme : public QObject
 {
@@ -36,6 +40,16 @@ public:
 
     // 当前是否为深色模式
     bool isDarkMode() const;
+
+    // 主题切换动画控制
+    bool isThemeTransitionEnabled() const;
+    void setThemeTransitionEnabled(bool enabled);
+
+    int themeTransitionMode() const;
+    void setThemeTransitionMode(int mode);
+
+    // 带动画的主题切换
+    void setThemeModeWithTransition(QWinUIThemeMode mode, const QPoint& rippleCenter = QPoint());
 
     // 颜色获取
     QColor getColor(const QString& colorName) const;
@@ -178,6 +192,9 @@ private:
     QColor adjustColorForTheme(const QColor& baseColor, bool isDark) const;
     QColor generateAccentVariant(const QColor& baseColor, double factor) const;
 
+    // 主题切换动画相关
+    void startThemeTransitionForAllWidgets();
+
 private:
     static QWinUITheme* s_instance;
 
@@ -191,6 +208,10 @@ private:
     QMap<QString, int> m_spacing;
 
     QSettings* m_settings;
+
+    // 主题切换动画控制
+    bool m_themeTransitionEnabled;
+    int m_themeTransitionMode;
 
     // 禁用拷贝构造和赋值
     Q_DISABLE_COPY(QWinUITheme)

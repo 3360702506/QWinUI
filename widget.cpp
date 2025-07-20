@@ -8,10 +8,20 @@
 #include <QWinUI/Controls/QWinUIProgressRing.h>
 #include <QWinUI/Controls/QWinUIIcon.h>
 #include <QWinUI/QWinUIIconConstants.h>
-// #include <QWinUI/Controls/QWinUIIconButton.h> // Temporarily disabled
+#include <QWinUI/QWinUIFluentIcons.h>
+#include <QWinUI/Controls/QWinUIAcrylicBrush.h>
+#include <QWinUI/Controls/QWinUIRichEditBox.h>
+#include <QWinUI/Controls/QWinUITextBox.h>
+#include <QWinUI/Controls/QWinUITextInput.h>
+#include <QWinUI/Controls/QWinUIPasswordBox.h>
+#include <QWinUI/Controls/QWinUIIconButton.h>
+#include <QWinUI/Controls/QWinUIAppBarSeparator.h>
 #include <QWinUI/QWinUIIconManager.h>
 #include <QMessageBox>
 #include <QApplication>
+#include <QSpinBox>
+#include <QHBoxLayout>
+#include <QColorDialog>
 
 Widget::Widget(QWidget *parent)
     : QWinUIWidget(parent)
@@ -32,233 +42,169 @@ Widget::Widget(QWidget *parent)
     QWinUIToolTip* titleTooltip = new QWinUIToolTip("QWinUI 演示程序\n基于 Qt 的 WinUI3 风格控件库\n支持现代化的 Fluent Design 效果", m_titleLabel, this);
     titleTooltip->setPlacement(QWinUIToolTip::Bottom);
 
-    // 模糊效果切换
-    QWinUIToggleSwitch* blurToggle = new QWinUIToggleSwitch(this);
-    blurToggle->setOffContent("模糊效果：关闭");
-    blurToggle->setOnContent("模糊效果：开启");
-    blurToggle->setIsOn(true);
-    connect(blurToggle, &QWinUIToggleSwitch::toggled, [this](bool checked) {
-        if (checked) {
-            setAttribute(Qt::WA_TranslucentBackground, true);
-            enableWindowsBlur(true);
-            setWindowsBlurType(2);
-            m_titleLabel->setText("当前效果: Acrylic");
-        } else {
-            enableWindowsBlur(false);
-            setAttribute(Qt::WA_TranslucentBackground, false);
-            setStyleSheet("Widget { background-color: #f0f0f0; }");
-            m_titleLabel->setText("当前效果: 无模糊");
-        }
-    });
-    m_layout->addWidget(blurToggle);
-    blurToggle->setToolTipText("切换窗口模糊效果\n开启后窗口将显示 Acrylic 或 Mica 效果");
-
     // 主题切换
     QWinUIToggleSwitch* themeToggle = new QWinUIToggleSwitch(this);
     themeToggle->setOffContent("浅色主题");
     themeToggle->setOnContent("深色主题");
-    connect(themeToggle, &QWinUIToggleSwitch::toggled, [this](bool checked) {
+    connect(themeToggle, &QWinUIToggleSwitch::toggled, [this, themeToggle](bool checked) {
         QWinUITheme* theme = QWinUITheme::getInstance();
-        startThemeTransition(QWinUIWidget::FadeTransition);
+        // 简化：直接切换主题，系统会自动处理涟漪动画
         theme->setThemeMode(checked ? QWinUIThemeMode::Dark : QWinUIThemeMode::Light);
     });
     m_layout->addWidget(themeToggle);
     themeToggle->setToolTipText("切换应用主题\n支持浅色和深色两种主题模式\n带有平滑的过渡动画");
 
-    // 模糊类型切换
-    QWinUIToggleSwitch* blurTypeToggle = new QWinUIToggleSwitch(this);
-    blurTypeToggle->setOffContent("Acrylic效果");
-    blurTypeToggle->setOnContent("Mica效果");
-    connect(blurTypeToggle, &QWinUIToggleSwitch::toggled, [this](bool checked) {
-        setWindowsBlurType(checked ? 3 : 2);
-        m_titleLabel->setText(QString("当前效果: %1").arg(checked ? "Mica" : "Acrylic"));
-    });
-    m_layout->addWidget(blurTypeToggle);
-    blurTypeToggle->setToolTipText("选择模糊效果类型\nAcrylic: 半透明模糊效果\nMica: Windows 11 新材质效果");
+    // TextBox 演示 - 使用新的自定义实现
+    QLabel* textBoxLabel = new QLabel("TextBox 演示:", this);
+    textBoxLabel->setStyleSheet("font-weight: bold; margin-top: 20px;");
+    m_layout->addWidget(textBoxLabel);
 
-    // 窗口装饰切换
-    QWinUIToggleSwitch* decorationToggle = new QWinUIToggleSwitch(this);
-    decorationToggle->setOffContent("标准窗口");
-    decorationToggle->setOnContent("无边框窗口");
-    connect(decorationToggle, &QWinUIToggleSwitch::toggled, [this](bool checked) {
-        setWindowFlags(checked ? (Qt::Window | Qt::FramelessWindowHint) : Qt::Window);
-        show();
-    });
-    m_layout->addWidget(decorationToggle);
-    decorationToggle->setToolTipText("切换窗口边框样式\n标准窗口: 带有系统标题栏\n无边框窗口: 现代化无边框设计");
+    // 基本文本输入框
+    QWinUITextInput* basicTextInput = new QWinUITextInput(this);
+    basicTextInput->setPlaceholderText("这是一个只读的文本输入框");
+    m_layout->addWidget(basicTextInput);
 
-    // 动画效果切换
-    QWinUIToggleSwitch* animationToggle = new QWinUIToggleSwitch(this);
-    animationToggle->setOffContent("渐变动画");
-    animationToggle->setOnContent("波纹动画");
-    connect(animationToggle, &QWinUIToggleSwitch::toggled, [this](bool checked) {
-        m_transitionType = checked ? QWinUIWidget::RippleTransition : QWinUIWidget::FadeTransition;
-    });
-    m_layout->addWidget(animationToggle);
-    animationToggle->setToolTipText("选择主题切换动画类型\n渐变动画: 平滑的颜色过渡\n波纹动画: 从点击位置扩散的圆圈效果");
+    // 只读文本输入框
+    QWinUITextInput* readOnlyTextInput = new QWinUITextInput(this);
+    readOnlyTextInput->setText("这是一个只读的文本输入框");
+    readOnlyTextInput->setReadOnly(true);
+    m_layout->addWidget(readOnlyTextInput);
 
-    // 窗口圆角切换
-    QWinUIToggleSwitch* cornerToggle = new QWinUIToggleSwitch(this);
-    cornerToggle->setOffContent("标准圆角");
-    cornerToggle->setOnContent("大圆角");
-    connect(cornerToggle, &QWinUIToggleSwitch::toggled, [this](bool checked) {
-        // setWindowCornerPreference(checked ? 2 : 1);  // 2=大圆角, 1=标准圆角
-    });
-    m_layout->addWidget(cornerToggle);
-    cornerToggle->setToolTipText("调整窗口圆角大小\n标准圆角: 4px 圆角半径\n大圆角: 8px 圆角半径\n符合 Windows 11 设计规范");
+    // 限制长度的文本输入框
+    QWinUITextInput* limitedTextInput = new QWinUITextInput(this);
+    limitedTextInput->setPlaceholderText("最多输入20个字符");
+    limitedTextInput->setMaxLength(20);
+    m_layout->addWidget(limitedTextInput);
 
-    // 通知测试按钮
-    QWinUIButton* notificationBtn = new QWinUIButton("测试通知", this);
-    connect(notificationBtn, &QWinUIButton::clicked, [this]() {
-        // 测试不同类型的通知
-        static int notifyType = 0;
-        switch (notifyType % 4) {
-        case 0:
-            QWinUINotification::showInfo("信息通知", "这是一个信息通知示例");
-            break;
-        case 1:
-            QWinUINotification::showWarning("警告通知", "这是一个警告通知示例");
-            break;
-        case 2:
-            QWinUINotification::showError("错误通知", "这是一个错误通知示例");
-            break;
-        case 3:
-            QWinUINotification::showSuccess("成功通知", "这是一个成功通知示例");
-            break;
-        }
-        notifyType++;
-    });
-    m_layout->addWidget(notificationBtn);
-    notificationBtn->setToolTipText("测试系统通知功能\nWindows: 使用原生Toast通知\n其他平台: 使用回退通知窗口");
+    // 多行文本输入框
+    QWinUITextInput* multiLineTextInput = new QWinUITextInput(this);
+    multiLineTextInput->setPlaceholderText("多行文本输入...");
+    multiLineTextInput->setMultiLine(true);
+    multiLineTextInput->setMinimumHeight(80);
+    m_layout->addWidget(multiLineTextInput);
 
-    // ProgressRing测试
-    QHBoxLayout* progressRingLayout = new QHBoxLayout();
+    // 基本密码输入框
+    QWinUIPasswordBox* basicPasswordBox = new QWinUIPasswordBox(this);
+    basicPasswordBox->setPlaceholderText("请输入密码...");
+    m_layout->addWidget(basicPasswordBox);
 
-    // 确定进度环
-    QWinUIProgressRing* determinateRing = new QWinUIProgressRing(this);
-    determinateRing->setValue(50);
-    determinateRing->setToolTipText("确定进度环\n当前进度: 50%");
-    progressRingLayout->addWidget(determinateRing);
+    // 不显示切换按钮的密码框
+    QWinUIPasswordBox* simplePasswordBox = new QWinUIPasswordBox(this);
+    simplePasswordBox->setPlaceholderText("简单密码框（无切换按钮）");
+    simplePasswordBox->setShowPasswordToggle(false);
+    m_layout->addWidget(simplePasswordBox);
 
-    // 不确定进度环
-    QWinUIProgressRing* indeterminateRing = new QWinUIProgressRing(this);
-    indeterminateRing->setIsIndeterminate(true);
-    indeterminateRing->setToolTipText("不确定进度环\n正在加载...");
-    progressRingLayout->addWidget(indeterminateRing);
+    // IconButton 演示
+    QLabel* iconButtonLabel = new QLabel("IconButton 演示:", this);
+    iconButtonLabel->setStyleSheet("font-weight: bold; margin-top: 20px;");
+    m_layout->addWidget(iconButtonLabel);
 
-    // 大尺寸进度环
-    QWinUIProgressRing* largeRing = new QWinUIProgressRing(this);
-    largeRing->setFixedSize(48, 48);
-    largeRing->setRingThickness(6);
-    largeRing->setValue(75);
-    largeRing->setToolTipText("大尺寸进度环\n当前进度: 75%");
-    progressRingLayout->addWidget(largeRing);
+    // 创建水平布局来放置图标按钮
+    QHBoxLayout* iconButtonLayout = new QHBoxLayout();
 
-    // 非活动进度环
-    QWinUIProgressRing* inactiveRing = new QWinUIProgressRing(this);
-    inactiveRing->setValue(25);
-    inactiveRing->setIsActive(false);
-    inactiveRing->setToolTipText("非活动进度环\n已暂停");
-    progressRingLayout->addWidget(inactiveRing);
+    // Fluent Icons常量
+    QChar homeChar = QWinUIFluentIcons::Navigation::HOME;
+    QChar searchChar = QWinUIFluentIcons::Navigation::SEARCH;
 
-    progressRingLayout->addStretch();
-    m_layout->addLayout(progressRingLayout);
+    // Fluent Icons 按钮 - 使用setFluentIcon方法
+    QWinUIIconButton* homeButton = new QWinUIIconButton(this);
+    homeButton->setFluentIcon(homeChar);
+    homeButton->setToolTipText("主页");  // 使用QWinUIWidget的tooltip
+    iconButtonLayout->addWidget(homeButton);
 
-    // 进度环控制按钮
-    QWinUIButton* progressRingBtn = new QWinUIButton("更新进度环", this);
-    connect(progressRingBtn, &QWinUIButton::clicked, [=]() {
-        static int progress = 0;
-        progress = (progress + 25) % 125;
-        determinateRing->setValue(progress);
-        largeRing->setValue(progress);
-        inactiveRing->setValue(progress);
+    // 搜索按钮
+    QWinUIIconButton* searchButton = new QWinUIIconButton(this);
+    searchButton->setFluentIcon(searchChar);
+    searchButton->setToolTipText("搜索");  // 使用QWinUIWidget的tooltip
+    iconButtonLayout->addWidget(searchButton);
 
-        QString tooltip = QString("确定进度环\n当前进度: %1%").arg(progress);
-        determinateRing->setToolTipText(tooltip);
+    // 也尝试用setFluentIcon方法
+    QWinUIIconButton* settingsButton = new QWinUIIconButton(this);
+    settingsButton->setFluentIcon(QWinUIFluentIcons::System::SETTINGS);
+    settingsButton->setToolTipText("设置");  // 使用QWinUIWidget的tooltip
+    iconButtonLayout->addWidget(settingsButton);
 
-        tooltip = QString("大尺寸进度环\n当前进度: %1%").arg(progress);
-        largeRing->setToolTipText(tooltip);
-    });
-    m_layout->addWidget(progressRingBtn);
-    progressRingBtn->setToolTipText("点击更新进度环的进度值\n演示进度变化动画");
+    // 使用IconManager的按钮
+    QWinUIIconButton* iconManagerButton = new QWinUIIconButton(this);
+    iconManagerButton->setIconName(QWinUIIcons::Solid::HEART);
+    iconManagerButton->setToolTipText("收藏");  // 使用QWinUIWidget的tooltip
+    iconButtonLayout->addWidget(iconManagerButton);
 
-    // 图标系统测试
-    QHBoxLayout* iconLayout = new QHBoxLayout();
+    // 添加更多图标按钮来测试
+    QWinUIIconButton* addButton = new QWinUIIconButton(this);
+    addButton->setFluentIcon(QWinUIFluentIcons::Actions::ADD);
+    addButton->setToolTipText("添加");
+    iconButtonLayout->addWidget(addButton);
 
-    // 不再使用图标管理器，直接使用资源路径
+    QWinUIIconButton* deleteButton = new QWinUIIconButton(this);
+    deleteButton->setFluentIcon(QWinUIFluentIcons::Actions::DELETE_ICON);
+    deleteButton->setToolTipText("删除");
+    iconButtonLayout->addWidget(deleteButton);
 
-    // 基础图标测试
-    QWinUIIcon* basicIcon = new QWinUIIcon(this);
-    basicIcon->setIconName("solid/house");
-    basicIcon->setIconSize(24, 24);
-    basicIcon->setToolTipText("基础图标\n支持缩放和着色");
-    iconLayout->addWidget(basicIcon);
+    // 添加垂直分隔线
+    QWinUIAppBarSeparator* verticalSeparator = new QWinUIAppBarSeparator(Qt::Vertical, this);
+    iconButtonLayout->addWidget(verticalSeparator);
 
-    // 彩色图标测试
-    QWinUIIcon* coloredIcon = new QWinUIIcon(this);
-    coloredIcon->setIconName("solid/heart");
-    coloredIcon->setIconSize(32, 32);
-    coloredIcon->setIconColor(QColor(255, 100, 100));
-    coloredIcon->setUseThemeColor(false);
-    coloredIcon->setToolTipText("彩色图标\n自定义颜色");
-    iconLayout->addWidget(coloredIcon);
+    // 添加更多按钮来演示分隔线效果
+    QWinUIIconButton* copyButton = new QWinUIIconButton(this);
+    copyButton->setFluentIcon(QWinUIFluentIcons::Actions::COPY);
+    copyButton->setToolTipText("复制");
+    iconButtonLayout->addWidget(copyButton);
 
-    // 旋转图标测试
-    QWinUIIcon* rotatingIcon = new QWinUIIcon(this);
-    rotatingIcon->setIconName("solid/arrows-rotate");
-    rotatingIcon->setIconSize(28, 28);
-    rotatingIcon->setToolTipText("旋转图标\n点击开始旋转");
-    connect(rotatingIcon, &QWinUIIcon::clicked, [=]() {
-        rotatingIcon->startSpinAnimation(2000);
-    });
-    iconLayout->addWidget(rotatingIcon);
+    QWinUIIconButton* pasteButton = new QWinUIIconButton(this);
+    pasteButton->setFluentIcon(QWinUIFluentIcons::Actions::PASTE);
+    pasteButton->setToolTipText("粘贴");
+    iconButtonLayout->addWidget(pasteButton);
 
-    // 动态SVG测试
-    QWinUIIcon* dynamicIcon = new QWinUIIcon(this);
-    QString simpleSvg = R"(
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" fill="currentColor"/>
-            <text x="12" y="16" text-anchor="middle" fill="white" font-size="8">SVG</text>
-        </svg>
-    )";
-    dynamicIcon->loadSvgFromString(simpleSvg);
-    dynamicIcon->setIconSize(32, 32);
-    dynamicIcon->setToolTipText("动态加载的SVG\n从字符串创建");
-    iconLayout->addWidget(dynamicIcon);
+    // 调试：检查IconManager状态
+    QWinUIIconManager* iconManager = QWinUIIconManager::getInstance();
+    if (iconManager) {
+        qDebug() << "IconManager available icons:" << iconManager->getIconNames().size();
+        qDebug() << "Available categories:" << iconManager->getCategories();
+        qDebug() << "Icons in 'solid' category:" << iconManager->getIconsByCategory("solid");
+    } else {
+        qDebug() << "IconManager is null!";
+    }
 
-    iconLayout->addStretch();
-    m_layout->addLayout(iconLayout);
+    iconButtonLayout->addStretch(); // 添加弹性空间
+    m_layout->addLayout(iconButtonLayout);
 
-    // 图标按钮测试 (暂时禁用)
-    // QHBoxLayout* iconButtonLayout = new QHBoxLayout();
-    // ... 图标按钮代码暂时移除 ...
+    // 添加水平分隔线演示
+    QLabel* separatorLabel = new QLabel("AppBarSeparator 演示:", this);
+    separatorLabel->setStyleSheet("font-weight: bold; margin-top: 20px;");
+    m_layout->addWidget(separatorLabel);
 
-    // 图标控制按钮
-    QWinUIButton* iconControlBtn = new QWinUIButton("切换图标主题", this);
-    connect(iconControlBtn, &QWinUIButton::clicked, [=]() {
-        static bool useTheme = true;
-        useTheme = !useTheme;
+    // 水平分隔线
+    QWinUIAppBarSeparator* horizontalSeparator = new QWinUIAppBarSeparator(Qt::Horizontal, this);
+    m_layout->addWidget(horizontalSeparator);
 
-        basicIcon->setUseThemeColor(useTheme);
-        coloredIcon->setUseThemeColor(useTheme);
-        rotatingIcon->setUseThemeColor(useTheme);
-        dynamicIcon->setUseThemeColor(useTheme);
+    // 添加一些说明文字
+    QLabel* descLabel = new QLabel("分隔线会自动适配当前主题颜色\n切换主题可以看到分隔线颜色的变化", this);
+    descLabel->setAlignment(Qt::AlignCenter);
+    m_layout->addWidget(descLabel);
 
-        iconControlBtn->setText(useTheme ? "切换图标主题" : "使用自定义颜色");
-    });
-    m_layout->addWidget(iconControlBtn);
-    iconControlBtn->setToolTipText("切换图标颜色主题\n演示主题联动功能\n悬停图标查看强调色效果");
+    // 添加另一个水平分隔线，测试多个分隔线的情况
+    QWinUIAppBarSeparator* horizontalSeparator2 = new QWinUIAppBarSeparator(Qt::Horizontal, this);
+    horizontalSeparator2->setSeparatorWidth(2); // 设置更粗的分隔线
+    m_layout->addWidget(horizontalSeparator2);
 
-    // 添加弹性空间
-    QSpacerItem* spacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    m_layout->addItem(spacer);
+    QLabel* thickLabel = new QLabel("上面是2像素粗的分隔线", this);
+    thickLabel->setAlignment(Qt::AlignCenter);
+    thickLabel->setStyleSheet("font-size: 12px; color: gray;");
+    m_layout->addWidget(thickLabel);
 
     // 初始化设置
-    setAttribute(Qt::WA_TranslucentBackground, true);
-    enableWindowsBlur(true);
-    setWindowsBlurType(2);
+    // setAttribute(Qt::WA_TranslucentBackground, true);
+    // enableWindowsBlur(true);
+    // setWindowsBlurType(2);
+    enableWindowsBlur(false);
     m_titleLabel->setText("当前效果: Acrylic");
-    m_transitionType = QWinUIWidget::FadeTransition;
+    m_transitionType = QWinUIWidget::RippleTransition;
+
+    // 配置主题切换动画
+    QWinUITheme* theme = QWinUITheme::getInstance();
+    theme->setThemeTransitionEnabled(true);  // 启用主题切换动画
+    theme->setThemeTransitionMode(0);  // 设置为涟漪动画 (0 = RippleTransition)
 }
 
 Widget::~Widget()
@@ -273,7 +219,7 @@ void Widget::onButtonClicked()
 void Widget::onThemeToggled()
 {
     QWinUITheme* theme = QWinUITheme::getInstance();
-    startThemeTransition(QWinUIWidget::RippleTransition);
+    // 简化：直接切换主题，系统会自动处理涟漪动画
     if (theme->themeMode() == QWinUIThemeMode::Light) {
         theme->setThemeMode(QWinUIThemeMode::Dark);
     } else {
@@ -284,7 +230,7 @@ void Widget::onThemeToggled()
 void Widget::onFadeThemeToggled()
 {
     QWinUITheme* theme = QWinUITheme::getInstance();
-    startThemeTransition(QWinUIWidget::FadeTransition);
+    // 简化：直接切换主题，系统会自动处理涟漪动画
     if (theme->themeMode() == QWinUIThemeMode::Light) {
         theme->setThemeMode(QWinUIThemeMode::Dark);
     } else {
