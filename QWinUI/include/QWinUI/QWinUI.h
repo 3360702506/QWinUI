@@ -13,6 +13,13 @@
 #include "Controls/QWinUIButton.h"
 #include "Controls/QWinUIToggleSwitch.h"
 #include "Controls/QWinUIToolTip.h"
+#include "Controls/QWinUIProgressBar.h"
+#include "Controls/QWinUIScrollView.h"
+#include "Controls/QWinUIScrollBar.h"
+#include "Controls/QWinUINotification.h"
+
+// Layouts
+#include "Layouts/QWinUIFlowLayout.h"
 #include "Controls/QWinUIToolTip.h"
 
 // 版本信息

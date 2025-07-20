@@ -14,7 +14,6 @@ class QWINUI_EXPORT QWinUIButton : public QWinUIWidget
     Q_PROPERTY(QIcon icon READ icon WRITE setIcon NOTIFY iconChanged)
     Q_PROPERTY(QWinUIButtonStyle buttonStyle READ buttonStyle WRITE setButtonStyle NOTIFY buttonStyleChanged)
     Q_PROPERTY(bool isDefault READ isDefault WRITE setDefault NOTIFY defaultChanged)
-
     Q_PROPERTY(double hoverProgress READ hoverProgress WRITE setHoverProgress)
     Q_PROPERTY(double pressProgress READ pressProgress WRITE setPressProgress)
 

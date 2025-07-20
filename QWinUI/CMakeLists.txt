@@ -39,6 +39,11 @@ set(QWINUI_SOURCES
     src/Controls/QWinUIButton.cpp
     src/Controls/QWinUIToggleSwitch.cpp
     src/Controls/QWinUIToolTip.cpp
+    src/Controls/QWinUIProgressBar.cpp
+    src/Controls/QWinUIScrollView.cpp
+    src/Controls/QWinUIScrollBar.cpp
+    src/Controls/QWinUINotification.cpp
+    src/Layouts/QWinUIFlowLayout.cpp
 )
 
 # 头文件
@@ -54,6 +59,11 @@ set(QWINUI_HEADERS
     include/QWinUI/Controls/QWinUIButton.h
     include/QWinUI/Controls/QWinUIToggleSwitch.h
     include/QWinUI/Controls/QWinUIToolTip.h
+    include/QWinUI/Controls/QWinUIProgressBar.h
+    include/QWinUI/Controls/QWinUIScrollView.h
+    include/QWinUI/Controls/QWinUIScrollBar.h
+    include/QWinUI/Controls/QWinUINotification.h
+    include/QWinUI/Layouts/QWinUIFlowLayout.h
 )
 
 # 创建库
@@ -74,7 +84,13 @@ target_link_libraries(QWinUI
 
 # Windows特定设置
 if(WIN32)
-    target_link_libraries(QWinUI dwmapi user32 version)
+    target_link_libraries(QWinUI
+        dwmapi
+        user32
+        version
+        windowsapp  # Windows Runtime库
+        runtimeobject  # Windows Runtime对象库
+    )
     target_compile_definitions(QWinUI PRIVATE QT_BUILD_QWINUI_LIB)
 endif()
 

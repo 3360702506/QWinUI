@@ -19,14 +19,7 @@
 #define DWMWA_SYSTEMBACKDROP_TYPE 38
 #endif
 
-// 系统背景类型
-enum DWMSBT {
-    DWMSBT_AUTO = 0,
-    DWMSBT_NONE = 1,
-    DWMSBT_MAINWINDOW = 2,
-    DWMSBT_TRANSIENTWINDOW = 3,
-    DWMSBT_TABBEDWINDOW = 4
-};
+// 系统背景类型 - 使用系统定义的枚举
 
 // Windows 10 Acrylic效果相关结构
 struct ACCENT_POLICY {
@@ -252,7 +245,7 @@ bool QWinUIBlurEffect::enableMicaEffectWin11(HWND hwnd, bool isDark)
     DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof(darkMode));
 
     // 设置Mica效果
-    DWMSBT backdrop = DWMSBT_MAINWINDOW;
+    DWM_SYSTEMBACKDROP_TYPE backdrop = DWMSBT_MAINWINDOW;
     HRESULT hr = DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdrop, sizeof(backdrop));
     
     return SUCCEEDED(hr);

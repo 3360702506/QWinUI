@@ -3,6 +3,9 @@
 #include <QPainter>
 #include <QDebug>
 #include <QWinUI/Controls/QWinUIToggleSwitch.h>
+#include <QWinUI/Controls/QWinUIScrollView.h>
+#include <QWinUI/Controls/QWinUINotification.h>
+#include <QMessageBox>
 
 Widget::Widget(QWidget *parent)
     : QWinUIWidget(parent)
@@ -97,6 +100,30 @@ Widget::Widget(QWidget *parent)
     });
     m_layout->addWidget(cornerToggle);
     cornerToggle->setToolTipText("调整窗口圆角大小\n标准圆角: 4px 圆角半径\n大圆角: 8px 圆角半径\n符合 Windows 11 设计规范");
+
+    // 通知测试按钮
+    QWinUIButton* notificationBtn = new QWinUIButton("测试通知", this);
+    connect(notificationBtn, &QWinUIButton::clicked, [this]() {
+        // 测试不同类型的通知
+        static int notifyType = 0;
+        switch (notifyType % 4) {
+        case 0:
+            QWinUINotification::showInfo("信息通知", "这是一个信息通知示例");
+            break;
+        case 1:
+            QWinUINotification::showWarning("警告通知", "这是一个警告通知示例");
+            break;
+        case 2:
+            QWinUINotification::showError("错误通知", "这是一个错误通知示例");
+            break;
+        case 3:
+            QWinUINotification::showSuccess("成功通知", "这是一个成功通知示例");
+            break;
+        }
+        notifyType++;
+    });
+    m_layout->addWidget(notificationBtn);
+    notificationBtn->setToolTipText("测试系统通知功能\nWindows: 使用原生Toast通知\n其他平台: 使用回退通知窗口");
 
     // 添加弹性空间
     QSpacerItem* spacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);

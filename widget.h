@@ -12,6 +12,8 @@
 #include <QWinUI/Controls/QWinUIRichTextBlock.h>
 #include <QWinUI/Controls/QWinUIButton.h>
 #include <QWinUI/Controls/QWinUIToolTip.h>
+#include <QWinUI/Controls/QWinUIProgressBar.h>
+#include <QWinUI/Layouts/QWinUIFlowLayout.h>
 
 class Widget : public QWinUIWidget
 {
