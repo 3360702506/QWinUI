@@ -360,11 +360,6 @@ void QWinUISplitButton::startArrowAnimation(bool pressed)
 
         // 启动动画
         m_dropDownAnimation->start();
-
-        qDebug() << "Arrow animation started:" << currentOffset << "->" << targetOffset
-                 << "Animation state:" << m_dropDownAnimation->state();
-    } else {
-        qDebug() << "Animation or button is null!";
     }
 }
 
@@ -382,13 +377,11 @@ void QWinUISplitButton::onDropDownButtonClicked()
 
 void QWinUISplitButton::onDropDownButtonPressed()
 {
-    qDebug() << "DropDown button pressed - starting animation";
     startArrowAnimation(true);
 }
 
 void QWinUISplitButton::onDropDownButtonReleased()
 {
-    qDebug() << "DropDown button released - starting animation";
     startArrowAnimation(false);
 }
 
@@ -425,7 +418,6 @@ void QWinUISplitButton::showEvent(QShowEvent* event)
     // 显示时立即获取并应用当前主题
     QWinUITheme* theme = QWinUITheme::getInstance();
     if (theme) {
-        qDebug() << "SplitButton shown, applying theme. Dark mode:" << theme->isDarkMode();
         if (m_mainButton) {
             m_mainButton->update();
         }

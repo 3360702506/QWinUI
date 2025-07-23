@@ -31,6 +31,7 @@ private slots:
 private:
     void setupRichTextContent();
     void setupSplitButtonExamples();
+    void setupSimpleCardExamples();
 
 private:
     QPoint m_lastMousePos; // 记录最后的鼠标位置

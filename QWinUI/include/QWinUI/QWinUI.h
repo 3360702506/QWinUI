@@ -33,6 +33,7 @@
 #include "Controls/QWinUIVariableSizedWrapGrid.h"
 #include "Controls/QWinUIMenuFlyout.h"
 #include "Controls/QWinUISplitButton.h"
+#include "Controls/QWinUISimpleCard.h"
 #include "Controls/QWinUIRadioButton.h"
 #include "Controls/QWinUISlider.h"
 

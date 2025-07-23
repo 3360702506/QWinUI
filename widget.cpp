@@ -20,6 +20,7 @@
 #include <QWinUI/Controls/QWinUIToggleButton.h>
 #include <QWinUI/Controls/QWinUIMenuFlyout.h>
 #include <QWinUI/Controls/QWinUISplitButton.h>
+#include <QWinUI/Controls/QWinUISimpleCard.h>
 #include <QWinUI/Controls/QWinUIRadioButton.h>
 #include <QWinUI/Controls/QWinUISlider.h>
 #include <QWinUI/QWinUIIconManager.h>
@@ -72,6 +73,9 @@ Widget::Widget(QWidget *parent)
 
     // 添加SplitButton示例
     setupSplitButtonExamples();
+
+    // 添加SimpleCard示例
+    setupSimpleCardExamples();
 }
 
 Widget::~Widget()
@@ -233,4 +237,88 @@ void Widget::setupSplitButtonExamples()
     descLabel->setWordWrap(true);
     descLabel->setStyleSheet("color: #666; font-size: 12px; margin-top: 10px;");
     m_layout->addWidget(descLabel);
+}
+
+void Widget::setupSimpleCardExamples()
+{
+    // 添加分组标题
+    QLabel* cardLabel = new QLabel("SimpleCard 示例", this);
+    cardLabel->setStyleSheet("font-size: 16px; font-weight: bold; margin-top: 20px;");
+    m_layout->addWidget(cardLabel);
+
+    // 创建水平布局容器
+    QHBoxLayout* cardLayout = new QHBoxLayout();
+    cardLayout->setSpacing(15);
+
+    // 1. 基本信息卡片
+    QWinUISimpleCard* infoCard = new QWinUISimpleCard(this);
+    infoCard->setFixedSize(200, 150);
+
+    QLabel* cardTitle = new QLabel("用户信息", infoCard);
+    cardTitle->setStyleSheet("font-size: 14px; font-weight: bold; margin-bottom: 10px;");
+
+    QLabel* cardContent = new QLabel("姓名：张三\n邮箱：zhangsan@example.com\n部门：技术部", infoCard);
+    cardContent->setStyleSheet("font-size: 12px; line-height: 1.5;");
+
+    infoCard->addWidget(cardTitle);
+    infoCard->addWidget(cardContent);
+
+    cardLayout->addWidget(infoCard);
+
+    // 2. 统计卡片
+    QWinUISimpleCard* statsCard = new QWinUISimpleCard(this);
+    statsCard->setFixedSize(200, 150);
+    statsCard->setCornerRadius(12); // 自定义圆角
+
+    QLabel* statsTitle = new QLabel("今日统计", statsCard);
+    statsTitle->setStyleSheet("font-size: 14px; font-weight: bold; margin-bottom: 10px;");
+
+    QLabel* statsNumber = new QLabel("1,234", statsCard);
+    statsNumber->setStyleSheet("font-size: 24px; font-weight: bold; color: #0078d4;");
+
+    QLabel* statsDesc = new QLabel("访问量", statsCard);
+    statsDesc->setStyleSheet("font-size: 12px; color: #666;");
+
+    statsCard->addWidget(statsTitle);
+    statsCard->addWidget(statsNumber);
+    statsCard->addWidget(statsDesc);
+
+    cardLayout->addWidget(statsCard);
+
+    // 3. 操作卡片
+    QWinUISimpleCard* actionCard = new QWinUISimpleCard(this);
+    actionCard->setFixedSize(200, 150);
+    actionCard->setContentMargins(20, 20, 20, 20); // 自定义内边距
+
+    QLabel* actionTitle = new QLabel("快速操作", actionCard);
+    actionTitle->setStyleSheet("font-size: 14px; font-weight: bold; margin-bottom: 15px;");
+
+    QWinUIButton* actionBtn1 = new QWinUIButton("新建文档", actionCard);
+    QWinUIButton* actionBtn2 = new QWinUIButton("导入数据", actionCard);
+
+    actionCard->addWidget(actionTitle);
+    actionCard->addWidget(actionBtn1);
+    actionCard->addWidget(actionBtn2);
+
+    connect(actionBtn1, &QWinUIButton::clicked, [this]() {
+        m_titleLabel->setText("新建文档按钮被点击！");
+    });
+
+    connect(actionBtn2, &QWinUIButton::clicked, [this]() {
+        m_titleLabel->setText("导入数据按钮被点击！");
+    });
+
+    cardLayout->addWidget(actionCard);
+
+    // 添加弹性空间
+    cardLayout->addStretch();
+
+    // 将水平布局添加到主布局
+    m_layout->addLayout(cardLayout);
+
+    // 添加说明文本
+    QLabel* cardDescLabel = new QLabel("SimpleCard 是一个容器组件，提供圆角背景、阴影效果和悬浮反馈，可以包含任意子控件。", this);
+    cardDescLabel->setWordWrap(true);
+    cardDescLabel->setStyleSheet("color: #666; font-size: 12px; margin-top: 10px;");
+    m_layout->addWidget(cardDescLabel);
 }
