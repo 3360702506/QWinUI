@@ -44,7 +44,6 @@ void QWinUISplitDropDownButton::setArrowOffset(double offset)
 {
     if (qAbs(m_arrowOffset - offset) > 1e-6) {
         m_arrowOffset = offset;
-        qDebug() << "Arrow offset changed to:" << offset;
         update(); // 触发重绘
     }
 }
@@ -56,7 +55,6 @@ void QWinUISplitDropDownButton::showEvent(QShowEvent* event)
     // 显示时立即获取并应用当前主题
     QWinUITheme* theme = QWinUITheme::getInstance();
     if (theme) {
-        qDebug() << "DropDown button shown, applying theme. Dark mode:" << theme->isDarkMode();
         update(); // 确保使用当前主题绘制
     }
 }
@@ -77,15 +75,20 @@ void QWinUISplitDropDownButton::paintEvent(QPaintEvent* event)
     // 根据主题和按钮状态计算箭头颜色
     QColor arrowColor;
     if (!isEnabled()) {
-        // 禁用状态使用禁用颜色
-        arrowColor = theme->textFillColorDisabled();
+        // 禁用状态使用灰色
+        arrowColor = QColor(128, 128, 128, 255);
     } else {
-        // 启用状态使用主要文本颜色
-        arrowColor = theme->textFillColorPrimary();
+        // 直接根据主题模式设置颜色，不依赖主题API
+        if (theme->isDarkMode()) {
+            // 深色主题使用白色
+            arrowColor = QColor(255, 255, 255, 255);
+        } else {
+            // 浅色主题使用黑色
+            arrowColor = QColor(0, 0, 0, 255);
+        }
     }
 
-    // 调试输出颜色值
-    qDebug() << "Arrow color:" << arrowColor << "isDarkMode:" << theme->isDarkMode();
+
 
     // 设置字体和颜色
     painter.setFont(m_fluentFont);
@@ -198,16 +201,7 @@ void QWinUISplitButton::initializeButton()
     m_dropDownAnimation->setStartValue(0.0);
     m_dropDownAnimation->setEndValue(0.0);
 
-    // 连接动画状态变化信号
-    connect(m_dropDownAnimation, &QPropertyAnimation::stateChanged, this, [this](QAbstractAnimation::State newState, QAbstractAnimation::State oldState) {
-        Q_UNUSED(oldState)
-        qDebug() << "Arrow animation state changed to:" << newState;
-    });
 
-    // 连接动画完成信号
-    connect(m_dropDownAnimation, &QPropertyAnimation::finished, this, [this]() {
-        qDebug() << "Arrow animation finished, current offset:" << m_dropDownButton->arrowOffset();
-    });
 
     // 连接信号
     connect(m_mainButton, &QWinUIButton::clicked, this, &QWinUISplitButton::onMainButtonClicked);
@@ -216,8 +210,6 @@ void QWinUISplitButton::initializeButton()
     // 连接按下和释放信号以实现动画
     connect(m_dropDownButton, &QWinUIButton::pressed, this, &QWinUISplitButton::onDropDownButtonPressed);
     connect(m_dropDownButton, &QWinUIButton::released, this, &QWinUISplitButton::onDropDownButtonReleased);
-
-    qDebug() << "SplitButton initialized with animation support";
 
     // 连接主题变化信号
     QWinUITheme* theme = QWinUITheme::getInstance();
