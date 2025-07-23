@@ -16,12 +16,18 @@
 #include <QWinUI/Controls/QWinUIPasswordBox.h>
 #include <QWinUI/Controls/QWinUIIconButton.h>
 #include <QWinUI/Controls/QWinUIAppBarSeparator.h>
+#include <QWinUI/Controls/QWinUIVariableSizedWrapGrid.h>
+#include <QWinUI/Controls/QWinUIToggleButton.h>
+#include <QWinUI/Controls/QWinUIMenuFlyout.h>
+#include <QWinUI/Controls/QWinUIRadioButton.h>
+#include <QWinUI/Controls/QWinUISlider.h>
 #include <QWinUI/QWinUIIconManager.h>
 #include <QMessageBox>
 #include <QApplication>
 #include <QSpinBox>
 #include <QHBoxLayout>
 #include <QColorDialog>
+#include <QPushButton>
 
 Widget::Widget(QWidget *parent)
     : QWinUIWidget(parent)
@@ -54,151 +60,88 @@ Widget::Widget(QWidget *parent)
     m_layout->addWidget(themeToggle);
     themeToggle->setToolTipText("切换应用主题\n支持浅色和深色两种主题模式\n带有平滑的过渡动画");
 
-    // TextBox 演示 - 使用新的自定义实现
-    QLabel* textBoxLabel = new QLabel("TextBox 演示:", this);
-    textBoxLabel->setStyleSheet("font-weight: bold; margin-top: 20px;");
-    m_layout->addWidget(textBoxLabel);
+    // 添加 QWinUIMenuFlyout 演示
+    QLabel* menuLabel = new QLabel("菜单飞出控件演示:", this);
+    m_layout->addWidget(menuLabel);
 
-    // 基本文本输入框
-    QWinUITextInput* basicTextInput = new QWinUITextInput(this);
-    basicTextInput->setPlaceholderText("这是一个只读的文本输入框");
-    m_layout->addWidget(basicTextInput);
+    // 创建触发菜单的按钮
+    QWinUIButton* menuButton = new QWinUIButton("显示上下文菜单", this);
+    menuButton->setButtonStyle(QWinUIButton::Standard);
+    menuButton->setToolTipText("点击显示WinUI3风格的上下文菜单");
+    m_layout->addWidget(menuButton);
 
-    // 只读文本输入框
-    QWinUITextInput* readOnlyTextInput = new QWinUITextInput(this);
-    readOnlyTextInput->setText("这是一个只读的文本输入框");
-    readOnlyTextInput->setReadOnly(true);
-    m_layout->addWidget(readOnlyTextInput);
+    // 创建菜单飞出控件
+    QWinUIMenuFlyout* contextMenu = new QWinUIMenuFlyout(this);
 
-    // 限制长度的文本输入框
-    QWinUITextInput* limitedTextInput = new QWinUITextInput(this);
-    limitedTextInput->setPlaceholderText("最多输入20个字符");
-    limitedTextInput->setMaxLength(20);
-    m_layout->addWidget(limitedTextInput);
+    // 添加基本菜单项
+    auto newItem = contextMenu->addItem("新建");
 
-    // 多行文本输入框
-    QWinUITextInput* multiLineTextInput = new QWinUITextInput(this);
-    multiLineTextInput->setPlaceholderText("多行文本输入...");
-    multiLineTextInput->setMultiLine(true);
-    multiLineTextInput->setMinimumHeight(80);
-    m_layout->addWidget(multiLineTextInput);
+    // 添加分隔符
+    contextMenu->addSeparator();
 
-    // 基本密码输入框
-    QWinUIPasswordBox* basicPasswordBox = new QWinUIPasswordBox(this);
-    basicPasswordBox->setPlaceholderText("请输入密码...");
-    m_layout->addWidget(basicPasswordBox);
+    // 添加可选中的菜单项
+    auto boldItem = contextMenu->addCheckableItem("粗体", false);
 
-    // 不显示切换按钮的密码框
-    QWinUIPasswordBox* simplePasswordBox = new QWinUIPasswordBox(this);
-    simplePasswordBox->setPlaceholderText("简单密码框（无切换按钮）");
-    simplePasswordBox->setShowPasswordToggle(false);
-    m_layout->addWidget(simplePasswordBox);
+    // 添加分隔符
+    contextMenu->addSeparator();
 
-    // IconButton 演示
-    QLabel* iconButtonLabel = new QLabel("IconButton 演示:", this);
-    iconButtonLabel->setStyleSheet("font-weight: bold; margin-top: 20px;");
-    m_layout->addWidget(iconButtonLabel);
+    // 添加单选菜单项组
+    auto leftAlign = contextMenu->addRadioItem("左对齐", "alignment", true);
 
-    // 创建水平布局来放置图标按钮
-    QHBoxLayout* iconButtonLayout = new QHBoxLayout();
+    // 添加分隔符
+    contextMenu->addSeparator();
 
-    // Fluent Icons常量
-    QChar homeChar = QWinUIFluentIcons::Navigation::HOME;
-    QChar searchChar = QWinUIFluentIcons::Navigation::SEARCH;
+    // 添加子菜单
+    auto formatSubMenu = contextMenu->addSubMenu("格式");
+    formatSubMenu->addItem("字体...");
+    formatSubMenu->addItem("段落...");
+    formatSubMenu->addSeparator();
+    formatSubMenu->addItem("样式...");
 
-    // Fluent Icons 按钮 - 使用setFluentIcon方法
-    QWinUIIconButton* homeButton = new QWinUIIconButton(this);
-    homeButton->setFluentIcon(homeChar);
-    homeButton->setToolTipText("主页");  // 使用QWinUIWidget的tooltip
-    iconButtonLayout->addWidget(homeButton);
+    // 添加更多菜单项
+    contextMenu->addSeparator();
+    auto exitItem = contextMenu->addItem("退出");
 
-    // 搜索按钮
-    QWinUIIconButton* searchButton = new QWinUIIconButton(this);
-    searchButton->setFluentIcon(searchChar);
-    searchButton->setToolTipText("搜索");  // 使用QWinUIWidget的tooltip
-    iconButtonLayout->addWidget(searchButton);
+    // 连接菜单按钮点击事件
+    connect(menuButton, &QWinUIButton::clicked, [this, contextMenu, menuButton]() {
+        // 在按钮下方显示菜单
+        QPoint buttonPos = menuButton->mapToGlobal(QPoint(0, menuButton->height()));
+        contextMenu->showAt(buttonPos);
+    });
 
-    // 也尝试用setFluentIcon方法
-    QWinUIIconButton* settingsButton = new QWinUIIconButton(this);
-    settingsButton->setFluentIcon(QWinUIFluentIcons::System::SETTINGS);
-    settingsButton->setToolTipText("设置");  // 使用QWinUIWidget的tooltip
-    iconButtonLayout->addWidget(settingsButton);
+    // 连接菜单项点击事件
+    connect(contextMenu, &QWinUIMenuFlyout::itemClicked, [this](QWinUIMenuFlyoutItem* item) {
+        QString itemText = item->text();
 
-    // 使用IconManager的按钮
-    QWinUIIconButton* iconManagerButton = new QWinUIIconButton(this);
-    iconManagerButton->setIconName(QWinUIIcons::Solid::HEART);
-    iconManagerButton->setToolTipText("收藏");  // 使用QWinUIWidget的tooltip
-    iconButtonLayout->addWidget(iconManagerButton);
+        if (itemText == "新建") {
+            m_titleLabel->setText("菜单: 新建文档");
+        } else if (itemText == "打开") {
+            m_titleLabel->setText("菜单: 打开文件");
+        } else if (itemText == "保存") {
+            m_titleLabel->setText("菜单: 保存文件");
+        } else if (itemText == "粗体") {
+            m_titleLabel->setText(QString("菜单: 粗体 %1").arg(item->isChecked() ? "开启" : "关闭"));
+        } else if (itemText == "斜体") {
+            m_titleLabel->setText(QString("菜单: 斜体 %1").arg(item->isChecked() ? "开启" : "关闭"));
+        } else if (itemText == "下划线") {
+            m_titleLabel->setText(QString("菜单: 下划线 %1").arg(item->isChecked() ? "开启" : "关闭"));
+        } else if (itemText.contains("对齐")) {
+            m_titleLabel->setText(QString("菜单: 选择了 %1").arg(itemText));
+        } else if (itemText == "字体...") {
+            m_titleLabel->setText("菜单: 打开字体对话框");
+        } else if (itemText == "段落...") {
+            m_titleLabel->setText("菜单: 打开段落对话框");
+        } else if (itemText == "样式...") {
+            m_titleLabel->setText("菜单: 打开样式对话框");
+        } else if (itemText == "退出") {
+            m_titleLabel->setText("菜单: 退出应用程序");
+        } else {
+            m_titleLabel->setText(QString("菜单: 点击了 %1").arg(itemText));
+        }
+    });
 
-    // 添加更多图标按钮来测试
-    QWinUIIconButton* addButton = new QWinUIIconButton(this);
-    addButton->setFluentIcon(QWinUIFluentIcons::Actions::ADD);
-    addButton->setToolTipText("添加");
-    iconButtonLayout->addWidget(addButton);
-
-    QWinUIIconButton* deleteButton = new QWinUIIconButton(this);
-    deleteButton->setFluentIcon(QWinUIFluentIcons::Actions::DELETE_ICON);
-    deleteButton->setToolTipText("删除");
-    iconButtonLayout->addWidget(deleteButton);
-
-    // 添加垂直分隔线
-    QWinUIAppBarSeparator* verticalSeparator = new QWinUIAppBarSeparator(Qt::Vertical, this);
-    iconButtonLayout->addWidget(verticalSeparator);
-
-    // 添加更多按钮来演示分隔线效果
-    QWinUIIconButton* copyButton = new QWinUIIconButton(this);
-    copyButton->setFluentIcon(QWinUIFluentIcons::Actions::COPY);
-    copyButton->setToolTipText("复制");
-    iconButtonLayout->addWidget(copyButton);
-
-    QWinUIIconButton* pasteButton = new QWinUIIconButton(this);
-    pasteButton->setFluentIcon(QWinUIFluentIcons::Actions::PASTE);
-    pasteButton->setToolTipText("粘贴");
-    iconButtonLayout->addWidget(pasteButton);
-
-    // 调试：检查IconManager状态
-    QWinUIIconManager* iconManager = QWinUIIconManager::getInstance();
-    if (iconManager) {
-        qDebug() << "IconManager available icons:" << iconManager->getIconNames().size();
-        qDebug() << "Available categories:" << iconManager->getCategories();
-        qDebug() << "Icons in 'solid' category:" << iconManager->getIconsByCategory("solid");
-    } else {
-        qDebug() << "IconManager is null!";
-    }
-
-    iconButtonLayout->addStretch(); // 添加弹性空间
-    m_layout->addLayout(iconButtonLayout);
-
-    // 添加水平分隔线演示
-    QLabel* separatorLabel = new QLabel("AppBarSeparator 演示:", this);
-    separatorLabel->setStyleSheet("font-weight: bold; margin-top: 20px;");
-    m_layout->addWidget(separatorLabel);
-
-    // 水平分隔线
-    QWinUIAppBarSeparator* horizontalSeparator = new QWinUIAppBarSeparator(Qt::Horizontal, this);
-    m_layout->addWidget(horizontalSeparator);
-
-    // 添加一些说明文字
-    QLabel* descLabel = new QLabel("分隔线会自动适配当前主题颜色\n切换主题可以看到分隔线颜色的变化", this);
-    descLabel->setAlignment(Qt::AlignCenter);
-    m_layout->addWidget(descLabel);
-
-    // 添加另一个水平分隔线，测试多个分隔线的情况
-    QWinUIAppBarSeparator* horizontalSeparator2 = new QWinUIAppBarSeparator(Qt::Horizontal, this);
-    horizontalSeparator2->setSeparatorWidth(2); // 设置更粗的分隔线
-    m_layout->addWidget(horizontalSeparator2);
-
-    QLabel* thickLabel = new QLabel("上面是2像素粗的分隔线", this);
-    thickLabel->setAlignment(Qt::AlignCenter);
-    thickLabel->setStyleSheet("font-size: 12px; color: gray;");
-    m_layout->addWidget(thickLabel);
-
-    // 初始化设置
-    // setAttribute(Qt::WA_TranslucentBackground, true);
-    // enableWindowsBlur(true);
-    // setWindowsBlurType(2);
     enableWindowsBlur(false);
-    m_titleLabel->setText("当前效果: Acrylic");
+
     m_transitionType = QWinUIWidget::RippleTransition;
 
     // 配置主题切换动画

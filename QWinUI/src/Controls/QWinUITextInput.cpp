@@ -1,4 +1,5 @@
 #include "QWinUI/Controls/QWinUITextInput.h"
+#include "QWinUI/Controls/QWinUIRichEditBox.h"
 #include "QWinUI/QWinUITheme.h"
 #include <QPainter>
 #include <QKeyEvent>
@@ -75,6 +76,10 @@ QWinUITextInput::QWinUITextInput(QWidget* parent)
     , m_undoStack(nullptr)
     , m_layoutDirty(true)
     , m_horizontalOffset(0)
+    , m_cursorOpacity(1.0)
+    , m_cursorAnimation(nullptr)
+    , m_cursorVisibilityTimer(nullptr)
+    , m_isTyping(false)
 {
     initializeTextInput();
 }
@@ -85,7 +90,17 @@ QWinUITextInput::~QWinUITextInput()
         m_cursorTimer->stop();
         delete m_cursorTimer;
     }
-    
+
+    if (m_cursorAnimation) {
+        m_cursorAnimation->stop();
+        delete m_cursorAnimation;
+    }
+
+    if (m_cursorVisibilityTimer) {
+        m_cursorVisibilityTimer->stop();
+        delete m_cursorVisibilityTimer;
+    }
+
     if (m_undoStack) {
         delete m_undoStack;
     }
@@ -97,10 +112,8 @@ void QWinUITextInput::initializeTextInput()
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_InputMethodEnabled, true);
     
-    // 初始化光标定时器
-    m_cursorTimer = new QTimer(this);
-    m_cursorTimer->setInterval(CURSOR_BLINK_INTERVAL);
-    connect(m_cursorTimer, &QTimer::timeout, this, &QWinUITextInput::onCursorBlink);
+    // 初始化光标动画系统
+    initializeCursorAnimation();
     
     // 初始化撤销栈
     m_undoStack = new QUndoStack(this);
@@ -108,17 +121,10 @@ void QWinUITextInput::initializeTextInput()
     // 初始化颜色
     updateColors();
 
-    // 设置父类的背景色，确保主题切换动画正常工作
+    // 连接主题变化信号
     QWinUITheme* theme = QWinUITheme::getInstance();
     if (theme) {
         connect(theme, &QWinUITheme::themeChanged, this, &QWinUITextInput::updateColors);
-
-        // 设置初始背景色
-        if (theme->isDarkMode()) {
-            setBackgroundColor(QColor(32, 32, 32));
-        } else {
-            setBackgroundColor(QColor(255, 255, 255));
-        }
     }
     
     // 设置默认尺寸
@@ -170,10 +176,10 @@ void QWinUITextInput::setReadOnly(bool readOnly)
     if (m_readOnly != readOnly) {
         m_readOnly = readOnly;
         if (m_readOnly) {
-            m_cursorTimer->stop();
+            stopCursorAnimation();
             clearSelection(); // 清除选择
         } else if (hasFocus()) {
-            m_cursorTimer->start();
+            startCursorAnimation();
         }
 
         // 更新颜色以反映只读状态
@@ -262,6 +268,33 @@ void QWinUITextInput::setCursorColor(const QColor& color)
     }
 }
 
+qreal QWinUITextInput::cursorOpacity() const
+{
+    return m_cursorOpacity;
+}
+
+void QWinUITextInput::setCursorOpacity(qreal opacity)
+{
+    opacity = qBound(0.0, opacity, 1.0);
+    if (qAbs(m_cursorOpacity - opacity) > 0.01) {
+        m_cursorOpacity = opacity;
+        update();
+    }
+}
+
+void QWinUITextInput::setFont(const QFont& font)
+{
+    QWidget::setFont(font);
+    m_layoutDirty = true;
+    updateTextLayout();
+    update();
+}
+
+QFont QWinUITextInput::font() const
+{
+    return QWidget::font();
+}
+
 int QWinUITextInput::cursorPosition() const
 {
     return m_cursorPosition;
@@ -336,9 +369,39 @@ QSize QWinUITextInput::minimumSizeHint() const
 
 void QWinUITextInput::onCursorBlink()
 {
-    if (hasFocus() && !m_readOnly) {
+    // 保留原有的简单闪烁逻辑作为备用
+    if (hasFocus() && !m_readOnly && !m_cursorAnimation) {
         m_cursorVisible = !m_cursorVisible;
         update();
+    }
+}
+
+void QWinUITextInput::onCursorVisibilityTimeout()
+{
+    // 当动画完成时，检查是否需要重新开始循环
+    if (hasFocus() && !m_readOnly && !m_isTyping) {
+        if (m_cursorAnimation->state() == QPropertyAnimation::Stopped) {
+            // 如果刚完成淡出，开始淡入
+            if (m_cursorOpacity <= 0.1) {
+                m_cursorAnimation->setStartValue(0.0);
+                m_cursorAnimation->setEndValue(1.0);
+                m_cursorAnimation->start();
+            }
+            // 如果刚完成淡入，等待一段时间后开始淡出
+            else {
+                m_cursorVisibilityTimer->start();
+            }
+        }
+    }
+}
+
+void QWinUITextInput::startCursorFadeOut()
+{
+    if (hasFocus() && !m_readOnly && !m_isTyping) {
+        // 开始淡出动画
+        m_cursorAnimation->setStartValue(1.0);
+        m_cursorAnimation->setEndValue(0.0);
+        m_cursorAnimation->start();
     }
 }
 
@@ -390,7 +453,16 @@ void QWinUITextInput::paintEvent(QPaintEvent* event)
     QRect rect = this->rect();
 
     // 只有在没有主题切换动画时才绘制背景
-    if (!isThemeTransitioning()) {
+    // 如果父控件是 QWinUIRichEditBox，则不绘制背景，让父控件处理
+    bool shouldDrawBackground = !isThemeTransitioning();
+    if (shouldDrawBackground && parent()) {
+        // 检查父控件是否是 QWinUIRichEditBox
+        if (qobject_cast<QWinUIRichEditBox*>(parent())) {
+            shouldDrawBackground = false;
+        }
+    }
+
+    if (shouldDrawBackground) {
         drawBackground(&painter, rect);
     }
 
@@ -517,6 +589,11 @@ void QWinUITextInput::drawSelection(QPainter* painter, const QRect& rect)
 
 void QWinUITextInput::drawCursor(QPainter* painter, const QRect& rect)
 {
+    // 如果光标完全透明，不绘制
+    if (m_cursorOpacity <= 0.0) {
+        return;
+    }
+
     painter->save();
 
     QFontMetrics fm(font());
@@ -537,9 +614,13 @@ void QWinUITextInput::drawCursor(QPainter* painter, const QRect& rect)
         int fontHeight = fm.height();
         int cursorY = rect.top() + (rect.height() - fontHeight) / 2;
 
+        // 应用透明度到光标颜色
+        QColor cursorColor = m_cursorColor;
+        cursorColor.setAlphaF(m_cursorOpacity);
+
         // 绘制光标线
         QRect cursorRect(cursorX, cursorY, DEFAULT_CURSOR_WIDTH, fontHeight);
-        painter->fillRect(cursorRect, m_cursorColor);
+        painter->fillRect(cursorRect, cursorColor);
     }
 
     painter->restore();
@@ -720,12 +801,8 @@ void QWinUITextInput::mousePressEvent(QMouseEvent* event)
             m_selecting = true;
         }
 
-        // 重置光标闪烁
-        m_cursorVisible = true;
-        if (m_cursorTimer->isActive()) {
-            m_cursorTimer->stop();
-            m_cursorTimer->start();
-        }
+        // 重置光标动画
+        resetCursorAnimation();
 
         update();
         emit cursorPositionChanged(m_cursorPosition);
@@ -793,8 +870,7 @@ void QWinUITextInput::focusInEvent(QFocusEvent* event)
     QWinUIWidget::focusInEvent(event);
 
     if (!m_readOnly) {
-        m_cursorVisible = true;
-        m_cursorTimer->start();
+        startCursorAnimation();
     }
 
     update();
@@ -804,8 +880,7 @@ void QWinUITextInput::focusOutEvent(QFocusEvent* event)
 {
     QWinUIWidget::focusOutEvent(event);
 
-    m_cursorTimer->stop();
-    m_cursorVisible = false;
+    stopCursorAnimation();
 
     update();
     emit editingFinished();
@@ -963,12 +1038,8 @@ void QWinUITextInput::insertText(const QString& text)
     // 确保光标位置在有效范围内
     m_cursorPosition = qBound(0, m_cursorPosition, m_text.length());
 
-    // 重置光标闪烁状态
-    m_cursorVisible = true;
-    if (m_cursorTimer->isActive()) {
-        m_cursorTimer->stop();
-        m_cursorTimer->start();
-    }
+    // 重置光标动画
+    resetCursorAnimation();
 
     m_layoutDirty = true;
     updateTextLayout();
@@ -995,12 +1066,8 @@ void QWinUITextInput::deleteText(int start, int length)
 
     clearSelection();
 
-    // 重置光标闪烁状态
-    m_cursorVisible = true;
-    if (m_cursorTimer->isActive()) {
-        m_cursorTimer->stop();
-        m_cursorTimer->start();
-    }
+    // 重置光标动画
+    resetCursorAnimation();
 
     m_layoutDirty = true;
     updateTextLayout();
@@ -1094,4 +1161,91 @@ void QWinUITextInput::ensureCursorVisible()
 
     // 确保偏移不为负数
     m_horizontalOffset = qMax(0, m_horizontalOffset);
+}
+
+void QWinUITextInput::initializeCursorAnimation()
+{
+    // 初始化光标可见性定时器（控制光标显示1000ms）
+    m_cursorVisibilityTimer = new QTimer(this);
+    m_cursorVisibilityTimer->setSingleShot(true);
+    m_cursorVisibilityTimer->setInterval(CURSOR_VISIBLE_DURATION);
+    connect(m_cursorVisibilityTimer, &QTimer::timeout, this, &QWinUITextInput::startCursorFadeOut);
+
+    // 初始化光标透明度动画
+    m_cursorAnimation = new QPropertyAnimation(this, "cursorOpacity", this);
+    m_cursorAnimation->setDuration(CURSOR_FADE_DURATION);
+    m_cursorAnimation->setEasingCurve(QEasingCurve::InOutQuad);
+
+    // 连接动画完成信号
+    connect(m_cursorAnimation, &QPropertyAnimation::finished, this, &QWinUITextInput::onCursorVisibilityTimeout);
+
+    // 保留原有的定时器作为备用（兼容性）
+    m_cursorTimer = new QTimer(this);
+    m_cursorTimer->setInterval(CURSOR_BLINK_INTERVAL);
+    connect(m_cursorTimer, &QTimer::timeout, this, &QWinUITextInput::onCursorBlink);
+}
+
+void QWinUITextInput::startCursorAnimation()
+{
+    if (m_readOnly) return;
+
+    // 停止所有现有动画
+    stopCursorAnimation();
+
+    // 设置光标为完全可见
+    m_cursorOpacity = 1.0;
+    m_cursorVisible = true;
+    update();
+
+    // 启动可见性定时器
+    m_cursorVisibilityTimer->start();
+}
+
+void QWinUITextInput::stopCursorAnimation()
+{
+    if (m_cursorAnimation) {
+        m_cursorAnimation->stop();
+    }
+
+    if (m_cursorVisibilityTimer) {
+        m_cursorVisibilityTimer->stop();
+    }
+
+    if (m_cursorTimer) {
+        m_cursorTimer->stop();
+    }
+
+    m_cursorVisible = false;
+    m_cursorOpacity = 0.0;
+    update();
+}
+
+void QWinUITextInput::resetCursorAnimation()
+{
+    if (m_readOnly || !hasFocus()) return;
+
+    // 重置动画状态
+    m_isTyping = true;
+
+    // 停止当前动画
+    if (m_cursorAnimation) {
+        m_cursorAnimation->stop();
+    }
+
+    if (m_cursorVisibilityTimer) {
+        m_cursorVisibilityTimer->stop();
+    }
+
+    // 立即显示光标
+    m_cursorOpacity = 1.0;
+    m_cursorVisible = true;
+    update();
+
+    // 延迟重新启动动画（模拟VSCode的行为）
+    QTimer::singleShot(100, this, [this]() {
+        m_isTyping = false;
+        if (hasFocus() && !m_readOnly) {
+            startCursorAnimation();
+        }
+    });
 }

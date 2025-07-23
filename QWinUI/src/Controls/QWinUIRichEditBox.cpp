@@ -11,7 +11,7 @@
 
 QWinUIRichEditBox::QWinUIRichEditBox(QWidget* parent)
     : QWinUIWidget(parent)
-    , m_textEdit(nullptr)
+    , m_textInput(nullptr)
     , m_underlineAnimation(nullptr)
     , m_borderColorAnimation(nullptr)
     , m_hasFocus(false)
@@ -35,11 +35,9 @@ void QWinUIRichEditBox::initializeComponent()
     setMinimumHeight(32);
     // 不设置最大高度限制，允许自由调整大小
 
-    // 创建文本编辑器
-    m_textEdit = new QTextEdit(this);
-    m_textEdit->setFrameStyle(QFrame::NoFrame);
-    m_textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff); // 禁用内置滚动条
+    // 创建文本输入控件
+    m_textInput = new QWinUITextInput(this);
+    m_textInput->setMultiLine(true); // 设置为多行模式
 
     // 创建自定义滚动条 - 使用绝对定位，不占用布局空间
     m_customScrollBar = new QWinUIScrollBar(Qt::Vertical, this);
@@ -47,13 +45,13 @@ void QWinUIRichEditBox::initializeComponent()
     m_customScrollBar->hide(); // 默认隐藏
     m_customScrollBar->setFixedWidth(8); // 更细的滚动条
 
-    // 设置布局 - 只放置文本编辑器
+    // 设置布局 - 只放置文本输入控件，但要为下划线留出空间
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(2, 2, 2, 3);
+    mainLayout->setContentsMargins(2, 2, 2, 5); // 底部留出更多空间给下划线
     mainLayout->setSpacing(0);
 
-    // 文本编辑器占全部空间
-    mainLayout->addWidget(m_textEdit);
+    // 文本输入控件占全部空间
+    mainLayout->addWidget(m_textInput);
 
     // 设置动画
     m_underlineAnimation = new QPropertyAnimation(this, "underlineProgress", this);
@@ -69,13 +67,13 @@ void QWinUIRichEditBox::initializeComponent()
     updateColors();
 
     // 连接信号
-    connect(m_textEdit, &QTextEdit::textChanged, this, &QWinUIRichEditBox::onTextChanged);
+    connect(m_textInput, &QWinUITextInput::textChanged, this, &QWinUIRichEditBox::onTextChanged);
 
     // 连接滚动条信号
     setupScrollBarConnections();
 
-    // 安装事件过滤器来监听QTextEdit的焦点事件
-    m_textEdit->installEventFilter(this);
+    // 安装事件过滤器来监听QWinUITextInput的焦点事件
+    m_textInput->installEventFilter(this);
 
     // 连接主题变化信号
     auto theme = QWinUITheme::getInstance();
@@ -149,7 +147,7 @@ void QWinUIRichEditBox::updateColors()
      .arg(scrollBarHandleColor)
      .arg(scrollBarHandleHoverColor);
 
-    m_textEdit->setStyleSheet(textEditStyle);
+    // QWinUITextInput 不需要设置样式表
     update();
 }
 
@@ -168,10 +166,7 @@ void QWinUIRichEditBox::paintEvent(QPaintEvent* event)
     if (!isThemeTransitioning()) {
         painter.fillRect(rect, m_backgroundColor);
     } else {
-        // 在主题切换动画期间，确保内部 QTextEdit 的背景透明
-        if (m_textEdit) {
-            m_textEdit->setStyleSheet("QTextEdit { background: transparent; border: none; }");
-        }
+        // 在主题切换动画期间，QWinUITextInput 会自动处理背景
     }
 
     // 绘制完整的圆角边框
@@ -247,9 +242,9 @@ void QWinUIRichEditBox::focusInEvent(QFocusEvent* event)
     QWinUIWidget::focusInEvent(event);
     m_hasFocus = true;
 
-    // 将焦点传递给文本编辑器
-    if (m_textEdit) {
-        m_textEdit->setFocus();
+    // 将焦点传递给文本输入控件
+    if (m_textInput) {
+        m_textInput->setFocus();
     }
 
     // 启动下划线展开动画
@@ -298,39 +293,39 @@ void QWinUIRichEditBox::leaveEvent(QEvent* event)
 // 文本属性实现
 QString QWinUIRichEditBox::text() const
 {
-    return m_textEdit ? m_textEdit->toPlainText() : QString();
+    return m_textInput ? m_textInput->text() : QString();
 }
 
 void QWinUIRichEditBox::setText(const QString& text)
 {
-    if (m_textEdit) {
-        m_textEdit->setPlainText(text);
+    if (m_textInput) {
+        m_textInput->setText(text);
         emit textChanged();
     }
 }
 
 QString QWinUIRichEditBox::placeholderText() const
 {
-    return m_textEdit ? m_textEdit->placeholderText() : QString();
+    return m_textInput ? m_textInput->placeholderText() : QString();
 }
 
 void QWinUIRichEditBox::setPlaceholderText(const QString& text)
 {
-    if (m_textEdit) {
-        m_textEdit->setPlaceholderText(text);
+    if (m_textInput) {
+        m_textInput->setPlaceholderText(text);
         emit placeholderTextChanged(text);
     }
 }
 
 bool QWinUIRichEditBox::isReadOnly() const
 {
-    return m_textEdit ? m_textEdit->isReadOnly() : false;
+    return m_textInput ? m_textInput->isReadOnly() : false;
 }
 
 void QWinUIRichEditBox::setReadOnly(bool readOnly)
 {
-    if (m_textEdit && m_textEdit->isReadOnly() != readOnly) {
-        m_textEdit->setReadOnly(readOnly);
+    if (m_textInput && m_textInput->isReadOnly() != readOnly) {
+        m_textInput->setReadOnly(readOnly);
         emit readOnlyChanged(readOnly);
     }
 }
@@ -344,21 +339,24 @@ void QWinUIRichEditBox::setMaxLength(int length)
 {
     if (m_maxLength != length) {
         m_maxLength = length;
+        if (m_textInput) {
+            m_textInput->setMaxLength(length);
+        }
         emit maxLengthChanged(length);
     }
 }
 
 bool QWinUIRichEditBox::acceptRichText() const
 {
-    return m_textEdit ? m_textEdit->acceptRichText() : true;
+    // QWinUITextInput 目前不支持富文本，返回 false
+    return false;
 }
 
 void QWinUIRichEditBox::setAcceptRichText(bool accept)
 {
-    if (m_textEdit && m_textEdit->acceptRichText() != accept) {
-        m_textEdit->setAcceptRichText(accept);
-        emit acceptRichTextChanged(accept);
-    }
+    // QWinUITextInput 目前不支持富文本，忽略设置
+    Q_UNUSED(accept)
+    emit acceptRichTextChanged(false);
 }
 
 // 外观属性实现
@@ -408,126 +406,125 @@ void QWinUIRichEditBox::setUnderlineProgress(double progress)
 
 
 
-// 富文本格式化方法 - 简化实现
+// 富文本格式化方法 - QWinUITextInput 不支持富文本，提供空实现
 void QWinUIRichEditBox::setFontBold(bool bold)
 {
-    if (m_textEdit) {
-        m_textEdit->setFontWeight(bold ? QFont::Bold : QFont::Normal);
-    }
+    Q_UNUSED(bold)
+    // QWinUITextInput 不支持富文本格式
 }
 
 void QWinUIRichEditBox::setFontItalic(bool italic)
 {
-    if (m_textEdit) {
-        m_textEdit->setFontItalic(italic);
-    }
+    Q_UNUSED(italic)
+    // QWinUITextInput 不支持富文本格式
 }
 
 void QWinUIRichEditBox::setFontUnderline(bool underline)
 {
-    if (m_textEdit) {
-        m_textEdit->setFontUnderline(underline);
-    }
+    Q_UNUSED(underline)
+    // QWinUITextInput 不支持富文本格式
 }
 
 void QWinUIRichEditBox::setFontSize(int size)
 {
-    if (m_textEdit && size > 0) {
-        m_textEdit->setFontPointSize(size);
+    if (m_textInput && size > 0) {
+        QFont font = m_textInput->font();
+        font.setPointSize(size);
+        m_textInput->setFont(font);
     }
 }
 
 void QWinUIRichEditBox::setFontFamily(const QString& family)
 {
-    if (m_textEdit && !family.isEmpty()) {
-        m_textEdit->setFontFamily(family);
+    if (m_textInput && !family.isEmpty()) {
+        QFont font = m_textInput->font();
+        font.setFamily(family);
+        m_textInput->setFont(font);
     }
 }
 
 void QWinUIRichEditBox::setTextColor(const QColor& color)
 {
-    if (m_textEdit && color.isValid()) {
-        m_textEdit->setTextColor(color);
-    }
+    Q_UNUSED(color)
+    // QWinUITextInput 的文本颜色由主题控制
 }
 
 void QWinUIRichEditBox::setTextBackgroundColor(const QColor& color)
 {
-    if (m_textEdit && color.isValid()) {
-        m_textEdit->setTextBackgroundColor(color);
-    }
+    Q_UNUSED(color)
+    // QWinUITextInput 不支持文本背景色
 }
 
 // 获取当前格式 - 简化实现
 bool QWinUIRichEditBox::isFontBold() const
 {
-    return m_textEdit ? m_textEdit->fontWeight() == QFont::Bold : false;
+    return m_textInput ? m_textInput->font().bold() : false;
 }
 
 bool QWinUIRichEditBox::isFontItalic() const
 {
-    return m_textEdit ? m_textEdit->fontItalic() : false;
+    return m_textInput ? m_textInput->font().italic() : false;
 }
 
 bool QWinUIRichEditBox::isFontUnderline() const
 {
-    return m_textEdit ? m_textEdit->fontUnderline() : false;
+    return m_textInput ? m_textInput->font().underline() : false;
 }
 
 int QWinUIRichEditBox::fontSize() const
 {
-    return m_textEdit ? static_cast<int>(m_textEdit->fontPointSize()) : 0;
+    return m_textInput ? m_textInput->font().pointSize() : 0;
 }
 
 QString QWinUIRichEditBox::fontFamily() const
 {
-    return m_textEdit ? m_textEdit->fontFamily() : QString();
+    return m_textInput ? m_textInput->font().family() : QString();
 }
 
 QColor QWinUIRichEditBox::textColor() const
 {
-    return m_textEdit ? m_textEdit->textColor() : QColor();
+    return m_textInput ? m_textColor : QColor();
 }
 
 QColor QWinUIRichEditBox::textBackgroundColor() const
 {
-    return m_textEdit ? m_textEdit->textBackgroundColor() : QColor();
+    return m_textInput ? m_backgroundColor : QColor();
 }
 
 // 便利方法
 void QWinUIRichEditBox::selectAll()
 {
-    if (m_textEdit) m_textEdit->selectAll();
+    if (m_textInput) m_textInput->selectAll();
 }
 
 void QWinUIRichEditBox::copy()
 {
-    if (m_textEdit) m_textEdit->copy();
+    if (m_textInput) m_textInput->copy();
 }
 
 void QWinUIRichEditBox::cut()
 {
-    if (m_textEdit) m_textEdit->cut();
+    if (m_textInput) m_textInput->cut();
 }
 
 void QWinUIRichEditBox::paste()
 {
-    if (m_textEdit) m_textEdit->paste();
+    if (m_textInput) m_textInput->paste();
 }
 
 void QWinUIRichEditBox::undo()
 {
-    if (m_textEdit) m_textEdit->undo();
+    if (m_textInput) m_textInput->undo();
 }
 
 void QWinUIRichEditBox::redo()
 {
-    if (m_textEdit) m_textEdit->redo();
+    if (m_textInput) m_textInput->redo();
 }
 
 void QWinUIRichEditBox::clear()
 {
-    if (m_textEdit) m_textEdit->clear();
+    if (m_textInput) m_textInput->clear();
 }
 
 // 尺寸提示
@@ -569,7 +566,7 @@ void QWinUIRichEditBox::updatePlaceholderVisibility()
 
 bool QWinUIRichEditBox::eventFilter(QObject* obj, QEvent* event)
 {
-    if (obj == m_textEdit) {
+    if (obj == m_textInput) {
         if (event->type() == QEvent::FocusIn) {
             if (!m_hasFocus) {
                 m_hasFocus = true;
@@ -608,11 +605,17 @@ bool QWinUIRichEditBox::eventFilter(QObject* obj, QEvent* event)
 
 void QWinUIRichEditBox::setupScrollBarConnections()
 {
-    if (!m_textEdit || !m_customScrollBar) return;
+    if (!m_textInput || !m_customScrollBar) return;
 
+    // QWinUITextInput 目前不支持滚动条，暂时隐藏自定义滚动条
+    m_customScrollBar->hide();
+    return;
+
+    // TODO: 当 QWinUITextInput 支持多行滚动时，重新实现这部分
     // 获取QTextEdit的内部滚动条来同步数值
-    QScrollBar* textScrollBar = m_textEdit->verticalScrollBar();
+    // QScrollBar* textScrollBar = m_textInput->verticalScrollBar();
 
+    /*
     // 连接QTextEdit滚动条的变化到自定义滚动条
     connect(textScrollBar, &QScrollBar::rangeChanged, this, [this](int min, int max) {
         m_customScrollBar->setMinimum(min);
@@ -631,14 +634,9 @@ void QWinUIRichEditBox::setupScrollBarConnections()
         m_customScrollBar->setValue(value);
     });
 
-    // QScrollBar没有pageStepChanged信号，我们手动同步
-    // connect(textScrollBar, &QScrollBar::pageStepChanged, this, [this](int step) {
-    //     m_customScrollBar->setPageStep(step);
-    // });
-
     // 连接自定义滚动条的变化到QTextEdit
     connect(m_customScrollBar, &QWinUIScrollBar::valueChanged, this, [this](int value) {
-        m_textEdit->verticalScrollBar()->setValue(value);
+        m_textInput->verticalScrollBar()->setValue(value);
     });
 
     // 初始同步
@@ -647,25 +645,12 @@ void QWinUIRichEditBox::setupScrollBarConnections()
     m_customScrollBar->setValue(textScrollBar->value());
     m_customScrollBar->setPageStep(textScrollBar->pageStep());
     m_customScrollBar->setVisible(textScrollBar->maximum() > textScrollBar->minimum());
+    */
 }
 
 void QWinUIRichEditBox::onThemeChanged()
 {
     updateColors();
 
-    // 主题切换完成后，恢复 QTextEdit 的正常样式
-    if (m_textEdit) {
-        QString styleSheet = QString(
-            "QTextEdit {"
-            "    background-color: %1;"
-            "    color: %2;"
-            "    border: none;"
-            "    selection-background-color: %3;"
-            "}"
-        ).arg(m_backgroundColor.name())
-         .arg(m_textColor.name())
-         .arg(QWinUITheme::getInstance()->accentColor().name());
-
-        m_textEdit->setStyleSheet(styleSheet);
-    }
+    // QWinUITextInput 会自动处理主题变化，不需要手动设置样式
 }

@@ -43,16 +43,12 @@ void QWinUIPasswordBox::initializePasswordBox()
 
 void QWinUIPasswordBox::setupSingleLineMode()
 {
-    if (m_textEdit) {
-        // 禁用换行
-        m_textEdit->setLineWrapMode(QTextEdit::NoWrap);
-        m_textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        m_textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        
-        // 不设置固定高度，让QTextEdit跟随父控件大小调整
-        
-        // 连接文档变化信号来确保单行
-        connect(m_textEdit->document(), &QTextDocument::contentsChanged,
+    if (m_textInput) {
+        // QWinUITextInput 默认就是单行模式，不需要额外设置
+        m_textInput->setMultiLine(false);
+
+        // 连接文本变化信号来确保单行
+        connect(m_textInput, &QWinUITextInput::textChanged,
                 this, &QWinUIPasswordBox::ensureSingleLine);
     }
     
@@ -204,7 +200,7 @@ void QWinUIPasswordBox::resizeEvent(QResizeEvent* event)
 
 bool QWinUIPasswordBox::eventFilter(QObject* obj, QEvent* event)
 {
-    if (obj == m_textEdit && event->type() == QEvent::KeyPress) {
+    if (obj == m_textInput && event->type() == QEvent::KeyPress) {
         QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
 
         // 阻止换行键
@@ -218,9 +214,9 @@ bool QWinUIPasswordBox::eventFilter(QObject* obj, QEvent* event)
 
 void QWinUIPasswordBox::onTextChanged()
 {
-    if (!m_ignoreTextChange && m_textEdit) {
+    if (!m_ignoreTextChange && m_textInput) {
         // 获取当前显示的文本
-        QString displayText = m_textEdit->toPlainText();
+        QString displayText = m_textInput->text();
 
         // 如果是密码可见模式，直接更新实际密码
         if (m_passwordVisible) {
@@ -244,7 +240,7 @@ void QWinUIPasswordBox::onPasswordToggleClicked()
 
 void QWinUIPasswordBox::updateDisplayText()
 {
-    if (!m_textEdit) return;
+    if (!m_textInput) return;
 
     m_ignoreTextChange = true;
 
@@ -256,37 +252,33 @@ void QWinUIPasswordBox::updateDisplayText()
     }
 
     // 保存光标位置
-    QTextCursor cursor = m_textEdit->textCursor();
-    int position = cursor.position();
+    int position = m_textInput->cursorPosition();
 
-    m_textEdit->setPlainText(displayText);
+    m_textInput->setText(displayText);
 
     // 恢复光标位置
-    cursor.setPosition(qMin(position, displayText.length()));
-    m_textEdit->setTextCursor(cursor);
+    m_textInput->setCursorPosition(qMin(position, displayText.length()));
 
     m_ignoreTextChange = false;
 }
 
 void QWinUIPasswordBox::ensureSingleLine()
 {
-    if (!m_textEdit || m_ignoreTextChange) return;
+    if (!m_textInput || m_ignoreTextChange) return;
 
-    QString currentText = m_textEdit->toPlainText();
+    QString currentText = m_textInput->text();
 
     if (currentText.contains('\n') || currentText.contains('\r')) {
         m_ignoreTextChange = true;
 
-        QTextCursor cursor = m_textEdit->textCursor();
-        int position = cursor.position();
+        int position = m_textInput->cursorPosition();
 
         QString singleLineText = currentText;
         singleLineText.replace('\n', "").replace('\r', "");
 
-        m_textEdit->setPlainText(singleLineText);
+        m_textInput->setText(singleLineText);
 
-        cursor.setPosition(qMin(position, singleLineText.length()));
-        m_textEdit->setTextCursor(cursor);
+        m_textInput->setCursorPosition(qMin(position, singleLineText.length()));
 
         m_ignoreTextChange = false;
     }

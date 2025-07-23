@@ -17,6 +17,7 @@ QWinUIButton::QWinUIButton(QWidget* parent)
     , m_isDefault(false)
     , m_isPressed(false)
     , m_isHovered(false)
+    , m_isChecked(false)
     , m_isFocused(false)
     , m_hoverAnimation(nullptr)
     , m_pressAnimation(nullptr)
@@ -32,6 +33,7 @@ QWinUIButton::QWinUIButton(const QString& text, QWidget* parent)
     , m_buttonStyle(Standard)
     , m_isDefault(false)
     , m_isPressed(false)
+    , m_isChecked(false)
     , m_isHovered(false)
     , m_isFocused(false)
     , m_hoverAnimation(nullptr)
@@ -334,6 +336,15 @@ QColor QWinUIButton::getBackgroundColor() const
         return isDark ? QColor(255, 255, 255, 10) : QColor(249, 249, 249, 77);
     }
 
+    // 如果是选中状态，使用强调色
+    if (m_isChecked) {
+        QWinUITheme* theme = QWinUITheme::getInstance();
+        if (theme) {
+            return theme->accentColor();
+        }
+        return QColor(0, 120, 215); // 默认强调色
+    }
+
     switch (m_buttonStyle) {
     case Accent:
         return QColor(0, 120, 215); // WinUI 3 Accent Blue
@@ -375,6 +386,11 @@ QColor QWinUIButton::getTextColor() const
 
     if (!isEnabled()) {
         return isDark ? QColor(255, 255, 255, 87) : QColor(161, 161, 161);
+    }
+
+    // 如果是选中状态，使用白色文本（在强调色背景上）
+    if (m_isChecked) {
+        return QColor(255, 255, 255);
     }
 
     switch (m_buttonStyle) {
@@ -556,6 +572,20 @@ void QWinUIButton::onThemeChanged()
 void QWinUIButton::updateButtonAppearance()
 {
     update();
+}
+
+// 为子类提供的状态设置方法
+void QWinUIButton::setCheckedState(bool checked)
+{
+    if (m_isChecked != checked) {
+        m_isChecked = checked;
+        updateButtonAppearance();
+    }
+}
+
+bool QWinUIButton::isCheckedState() const
+{
+    return m_isChecked;
 }
 
 QT_END_NAMESPACE

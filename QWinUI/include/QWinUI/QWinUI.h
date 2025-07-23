@@ -15,6 +15,7 @@
 // Controls
 #include "Controls/QWinUIButton.h"
 #include "Controls/QWinUIIconButton.h"
+#include "Controls/QWinUIToggleButton.h"
 #include "Controls/QWinUIToggleSwitch.h"
 #include "Controls/QWinUIToolTip.h"
 #include "Controls/QWinUIProgressBar.h"
@@ -29,7 +30,10 @@
 #include "Controls/QWinUIScrollBar.h"
 #include "Controls/QWinUINotification.h"
 #include "Controls/QWinUIAppBarSeparator.h"
-#include "Controls/QWinUIAppBarSeparator.h"
+#include "Controls/QWinUIVariableSizedWrapGrid.h"
+#include "Controls/QWinUIMenuFlyout.h"
+#include "Controls/QWinUIRadioButton.h"
+#include "Controls/QWinUISlider.h"
 
 // Layouts
 #include "Layouts/QWinUIFlowLayout.h"

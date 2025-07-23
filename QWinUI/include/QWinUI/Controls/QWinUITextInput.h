@@ -7,6 +7,8 @@
 #include <QTextCursor>
 #include <QUndoStack>
 #include <QMimeData>
+#include <QPropertyAnimation>
+#include <QEasingCurve>
 
 QT_BEGIN_NAMESPACE
 
@@ -59,6 +61,7 @@ class QWINUI_EXPORT QWinUITextInput : public QWinUIWidget
     Q_PROPERTY(QColor textColor READ textColor WRITE setTextColor)
     Q_PROPERTY(QColor selectionColor READ selectionColor WRITE setSelectionColor)
     Q_PROPERTY(QColor cursorColor READ cursorColor WRITE setCursorColor)
+    Q_PROPERTY(qreal cursorOpacity READ cursorOpacity WRITE setCursorOpacity)
 
 public:
     explicit QWinUITextInput(QWidget* parent = nullptr);
@@ -93,6 +96,9 @@ public:
     QColor cursorColor() const;
     void setCursorColor(const QColor& color);
 
+    qreal cursorOpacity() const;
+    void setCursorOpacity(qreal opacity);
+
     // 光标和选择
     int cursorPosition() const;
     void setCursorPosition(int position);
@@ -110,6 +116,10 @@ public:
     void redo();
     void clear();
     
+    // 字体设置
+    void setFont(const QFont& font);
+    QFont font() const;
+
     // 富文本格式
     void setBold(bool bold);
     void setItalic(bool italic);
@@ -146,6 +156,8 @@ protected:
 private slots:
     void onCursorBlink();
     void updateColors();
+    void onCursorVisibilityTimeout();
+    void startCursorFadeOut();
 
 private:
     // 核心方法
@@ -176,6 +188,12 @@ private:
     // 撤销/重做
     void addCommand(QWinUITextCommand* command);
 
+    // 光标动画控制
+    void initializeCursorAnimation();
+    void startCursorAnimation();
+    void stopCursorAnimation();
+    void resetCursorAnimation();
+
 private:
     // 文本数据
     QString m_text;
@@ -191,6 +209,12 @@ private:
     int m_selectionEnd;
     bool m_cursorVisible;
     QTimer* m_cursorTimer;
+
+    // 光标动画
+    qreal m_cursorOpacity;
+    QPropertyAnimation* m_cursorAnimation;
+    QTimer* m_cursorVisibilityTimer;
+    bool m_isTyping;
     
     // 状态
     bool m_readOnly;
@@ -218,6 +242,8 @@ private:
     static constexpr int DEFAULT_CURSOR_WIDTH = 1;
     static constexpr int DEFAULT_PADDING = 8;
     static constexpr int CURSOR_BLINK_INTERVAL = 500;
+    static constexpr int CURSOR_VISIBLE_DURATION = 1000;  // 光标完全可见持续时间
+    static constexpr int CURSOR_FADE_DURATION = 500;      // 淡入淡出动画时长
 };
 
 QT_END_NAMESPACE

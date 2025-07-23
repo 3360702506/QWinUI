@@ -32,16 +32,12 @@ void QWinUITextBox::initializeTextBox()
 
 void QWinUITextBox::setupSingleLineMode()
 {
-    if (m_textEdit) {
-        // 禁用换行
-        m_textEdit->setLineWrapMode(QTextEdit::NoWrap);
-        m_textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        m_textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        
-        // 不设置固定高度，让QTextEdit跟随父控件大小调整
-        
-        // 连接文档变化信号来确保单行
-        connect(m_textEdit->document(), &QTextDocument::contentsChanged,
+    if (m_textInput) {
+        // QWinUITextInput 默认就是单行模式
+        m_textInput->setMultiLine(false);
+
+        // 连接文本变化信号来确保单行
+        connect(m_textInput, &QWinUITextInput::textChanged,
                 this, &QWinUITextBox::ensureSingleLine);
     }
     
@@ -95,15 +91,15 @@ void QWinUITextBox::keyPressEvent(QKeyEvent* event)
 
 bool QWinUITextBox::eventFilter(QObject* obj, QEvent* event)
 {
-    if (obj == m_textEdit && event->type() == QEvent::KeyPress) {
+    if (obj == m_textInput && event->type() == QEvent::KeyPress) {
         QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
-        
+
         // 阻止换行键
         if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
-            return true; // 消费事件，不传递给QTextEdit
+            return true; // 消费事件，不传递给QWinUITextInput
         }
     }
-    
+
     return QWinUIRichEditBox::eventFilter(obj, event);
 }
 
@@ -119,29 +115,27 @@ void QWinUITextBox::onTextChanged()
 
 void QWinUITextBox::ensureSingleLine()
 {
-    if (!m_textEdit || m_ignoreTextChange) return;
-    
-    QString currentText = m_textEdit->toPlainText();
-    
+    if (!m_textInput || m_ignoreTextChange) return;
+
+    QString currentText = m_textInput->text();
+
     // 检查是否包含换行符
     if (currentText.contains('\n') || currentText.contains('\r')) {
         m_ignoreTextChange = true;
-        
+
         // 保存光标位置
-        QTextCursor cursor = m_textEdit->textCursor();
-        int position = cursor.position();
-        
+        int position = m_textInput->cursorPosition();
+
         // 移除换行符
         QString singleLineText = currentText;
         singleLineText.replace('\n', ' ').replace('\r', ' ');
-        
+
         // 设置新文本
-        m_textEdit->setPlainText(singleLineText);
-        
+        m_textInput->setText(singleLineText);
+
         // 恢复光标位置
-        cursor.setPosition(qMin(position, singleLineText.length()));
-        m_textEdit->setTextCursor(cursor);
-        
+        m_textInput->setCursorPosition(qMin(position, singleLineText.length()));
+
         m_ignoreTextChange = false;
     }
 }

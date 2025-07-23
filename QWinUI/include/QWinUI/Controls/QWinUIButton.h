@@ -75,6 +75,10 @@ protected:
     void focusInEvent(QFocusEvent* event) override;
     void focusOutEvent(QFocusEvent* event) override;
 
+    // 为子类提供的状态设置方法
+    void setCheckedState(bool checked);
+    bool isCheckedState() const;
+
 private slots:
     void onThemeChanged();
 
@@ -103,6 +107,7 @@ private:
     QWinUIButtonStyle m_buttonStyle;
     bool m_isDefault;
     bool m_isPressed;
+    bool m_isChecked;
     bool m_isHovered;
     bool m_isFocused;
     

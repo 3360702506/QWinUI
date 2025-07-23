@@ -39,6 +39,7 @@ set(QWINUI_SOURCES
     src/Controls/QWinUIRichTextBlock.cpp
     src/Controls/QWinUIButton.cpp
     src/Controls/QWinUIIconButton.cpp
+    src/Controls/QWinUIToggleButton.cpp
     src/Controls/QWinUIToggleSwitch.cpp
     src/Controls/QWinUIToolTip.cpp
     src/Controls/QWinUIProgressBar.cpp
@@ -53,6 +54,10 @@ set(QWINUI_SOURCES
     src/Controls/QWinUIScrollBar.cpp
     src/Controls/QWinUINotification.cpp
     src/Controls/QWinUIAppBarSeparator.cpp
+    src/Controls/QWinUIVariableSizedWrapGrid.cpp
+    src/Controls/QWinUIMenuFlyout.cpp
+    src/Controls/QWinUIRadioButton.cpp
+    src/Controls/QWinUISlider.cpp
     src/Layouts/QWinUIFlowLayout.cpp
 )
 
@@ -71,6 +76,7 @@ set(QWINUI_HEADERS
     include/QWinUI/Controls/QWinUIRichTextBlock.h
     include/QWinUI/Controls/QWinUIButton.h
     include/QWinUI/Controls/QWinUIIconButton.h
+    include/QWinUI/Controls/QWinUIToggleButton.h
     include/QWinUI/Controls/QWinUIToggleSwitch.h
     include/QWinUI/Controls/QWinUIToolTip.h
     include/QWinUI/Controls/QWinUIProgressBar.h
@@ -85,6 +91,10 @@ set(QWINUI_HEADERS
     include/QWinUI/Controls/QWinUIScrollBar.h
     include/QWinUI/Controls/QWinUINotification.h
     include/QWinUI/Controls/QWinUIAppBarSeparator.h
+    include/QWinUI/Controls/QWinUIVariableSizedWrapGrid.h
+    include/QWinUI/Controls/QWinUIMenuFlyout.h
+    include/QWinUI/Controls/QWinUIRadioButton.h
+    include/QWinUI/Controls/QWinUISlider.h
     include/QWinUI/Layouts/QWinUIFlowLayout.h
 )
 

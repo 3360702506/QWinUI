@@ -2,11 +2,12 @@
 #define QWINUIRICHEDITBOX_H
 
 #include "../QWinUIWidget.h"
-#include <QTextEdit>
+#include "QWinUITextInput.h"
 #include <QPropertyAnimation>
 #include <QPainter>
 #include <QTextCharFormat>
 #include <QTextCursor>
+#include <QTimer>
 
 QT_BEGIN_NAMESPACE
 class QWinUIScrollBar;
@@ -124,7 +125,7 @@ private slots:
 
 protected:
     // 核心组件 - 供子类访问
-    QTextEdit* m_textEdit;
+    QWinUITextInput* m_textInput;
     QWinUIScrollBar* m_customScrollBar;
 
 private:
