@@ -19,6 +19,7 @@
 #include <QWinUI/Controls/QWinUIVariableSizedWrapGrid.h>
 #include <QWinUI/Controls/QWinUIToggleButton.h>
 #include <QWinUI/Controls/QWinUIMenuFlyout.h>
+#include <QWinUI/Controls/QWinUISplitButton.h>
 #include <QWinUI/Controls/QWinUIRadioButton.h>
 #include <QWinUI/Controls/QWinUISlider.h>
 #include <QWinUI/QWinUIIconManager.h>
@@ -60,86 +61,6 @@ Widget::Widget(QWidget *parent)
     m_layout->addWidget(themeToggle);
     themeToggle->setToolTipText("切换应用主题\n支持浅色和深色两种主题模式\n带有平滑的过渡动画");
 
-    // 添加 QWinUIMenuFlyout 演示
-    QLabel* menuLabel = new QLabel("菜单飞出控件演示:", this);
-    m_layout->addWidget(menuLabel);
-
-    // 创建触发菜单的按钮
-    QWinUIButton* menuButton = new QWinUIButton("显示上下文菜单", this);
-    menuButton->setButtonStyle(QWinUIButton::Standard);
-    menuButton->setToolTipText("点击显示WinUI3风格的上下文菜单");
-    m_layout->addWidget(menuButton);
-
-    // 创建菜单飞出控件
-    QWinUIMenuFlyout* contextMenu = new QWinUIMenuFlyout(this);
-
-    // 添加基本菜单项
-    auto newItem = contextMenu->addItem("新建");
-
-    // 添加分隔符
-    contextMenu->addSeparator();
-
-    // 添加可选中的菜单项
-    auto boldItem = contextMenu->addCheckableItem("粗体", false);
-
-    // 添加分隔符
-    contextMenu->addSeparator();
-
-    // 添加单选菜单项组
-    auto leftAlign = contextMenu->addRadioItem("左对齐", "alignment", true);
-
-    // 添加分隔符
-    contextMenu->addSeparator();
-
-    // 添加子菜单
-    auto formatSubMenu = contextMenu->addSubMenu("格式");
-    formatSubMenu->addItem("字体...");
-    formatSubMenu->addItem("段落...");
-    formatSubMenu->addSeparator();
-    formatSubMenu->addItem("样式...");
-
-    // 添加更多菜单项
-    contextMenu->addSeparator();
-    auto exitItem = contextMenu->addItem("退出");
-
-    // 连接菜单按钮点击事件
-    connect(menuButton, &QWinUIButton::clicked, [this, contextMenu, menuButton]() {
-        // 在按钮下方显示菜单
-        QPoint buttonPos = menuButton->mapToGlobal(QPoint(0, menuButton->height()));
-        contextMenu->showAt(buttonPos);
-    });
-
-    // 连接菜单项点击事件
-    connect(contextMenu, &QWinUIMenuFlyout::itemClicked, [this](QWinUIMenuFlyoutItem* item) {
-        QString itemText = item->text();
-
-        if (itemText == "新建") {
-            m_titleLabel->setText("菜单: 新建文档");
-        } else if (itemText == "打开") {
-            m_titleLabel->setText("菜单: 打开文件");
-        } else if (itemText == "保存") {
-            m_titleLabel->setText("菜单: 保存文件");
-        } else if (itemText == "粗体") {
-            m_titleLabel->setText(QString("菜单: 粗体 %1").arg(item->isChecked() ? "开启" : "关闭"));
-        } else if (itemText == "斜体") {
-            m_titleLabel->setText(QString("菜单: 斜体 %1").arg(item->isChecked() ? "开启" : "关闭"));
-        } else if (itemText == "下划线") {
-            m_titleLabel->setText(QString("菜单: 下划线 %1").arg(item->isChecked() ? "开启" : "关闭"));
-        } else if (itemText.contains("对齐")) {
-            m_titleLabel->setText(QString("菜单: 选择了 %1").arg(itemText));
-        } else if (itemText == "字体...") {
-            m_titleLabel->setText("菜单: 打开字体对话框");
-        } else if (itemText == "段落...") {
-            m_titleLabel->setText("菜单: 打开段落对话框");
-        } else if (itemText == "样式...") {
-            m_titleLabel->setText("菜单: 打开样式对话框");
-        } else if (itemText == "退出") {
-            m_titleLabel->setText("菜单: 退出应用程序");
-        } else {
-            m_titleLabel->setText(QString("菜单: 点击了 %1").arg(itemText));
-        }
-    });
-
     enableWindowsBlur(false);
 
     m_transitionType = QWinUIWidget::RippleTransition;
@@ -148,6 +69,9 @@ Widget::Widget(QWidget *parent)
     QWinUITheme* theme = QWinUITheme::getInstance();
     theme->setThemeTransitionEnabled(true);  // 启用主题切换动画
     theme->setThemeTransitionMode(0);  // 设置为涟漪动画 (0 = RippleTransition)
+
+    // 添加SplitButton示例
+    setupSplitButtonExamples();
 }
 
 Widget::~Widget()
@@ -195,4 +119,118 @@ void Widget::setupRichTextContent()
     m_richTextBlock->addHyperlink("超链接", QUrl("https://github.com/microsoft/WinUI"));
     m_richTextBlock->addLineBreak();
     m_richTextBlock->addRun("支持多行显示和丰富的文本格式。");
+}
+
+void Widget::setupSplitButtonExamples()
+{
+    // 添加分组标题
+    QLabel* splitButtonLabel = new QLabel("SplitButton 示例", this);
+    splitButtonLabel->setStyleSheet("font-size: 16px; font-weight: bold; margin-top: 20px;");
+    m_layout->addWidget(splitButtonLabel);
+
+    // 创建水平布局容器
+    QHBoxLayout* splitButtonLayout = new QHBoxLayout();
+    splitButtonLayout->setSpacing(15);
+
+    // 1. 基本的保存SplitButton
+    QWinUISplitButton* saveSplitButton = new QWinUISplitButton("保存", this);
+
+    // 创建保存菜单
+    QWinUIMenuFlyout* saveMenu = new QWinUIMenuFlyout(this);
+    saveMenu->addItem("保存");
+    saveMenu->addItem("另存为...");
+    saveMenu->addSeparator();
+    saveMenu->addItem("保存所有");
+
+    saveSplitButton->setFlyout(saveMenu);
+
+    // 连接信号
+    connect(saveSplitButton, &QWinUISplitButton::clicked, [this]() {
+        m_titleLabel->setText("保存按钮被点击！");
+        qDebug() << "Save button clicked!";
+    });
+
+    connect(saveMenu, &QWinUIMenuFlyout::itemClicked, [this](QWinUIMenuFlyoutItem* item) {
+        m_titleLabel->setText(QString("菜单项被点击：%1").arg(item->text()));
+        qDebug() << "Save menu item clicked:" << item->text();
+    });
+
+    splitButtonLayout->addWidget(saveSplitButton);
+
+    // 2. 带图标的新建SplitButton
+    QIcon newIcon = style()->standardIcon(QStyle::SP_FileDialogNewFolder);
+    QWinUISplitButton* newSplitButton = new QWinUISplitButton("新建", newIcon, this);
+
+    // 创建新建菜单
+    QWinUIMenuFlyout* newMenu = new QWinUIMenuFlyout(this);
+    newMenu->addItem("新建文件");
+    newMenu->addItem("新建文件夹");
+    newMenu->addSeparator();
+    newMenu->addItem("新建项目");
+
+    newSplitButton->setFlyout(newMenu);
+
+    // 连接信号
+    connect(newSplitButton, &QWinUISplitButton::clicked, [this]() {
+        m_titleLabel->setText("新建按钮被点击！");
+        qDebug() << "New button clicked!";
+    });
+
+    connect(newMenu, &QWinUIMenuFlyout::itemClicked, [this](QWinUIMenuFlyoutItem* item) {
+        m_titleLabel->setText(QString("新建菜单项：%1").arg(item->text()));
+        qDebug() << "New menu item clicked:" << item->text();
+    });
+
+    splitButtonLayout->addWidget(newSplitButton);
+
+    // 3. 颜色选择SplitButton
+    QWinUISplitButton* colorSplitButton = new QWinUISplitButton("选择颜色", this);
+
+    // 创建颜色菜单
+    QWinUIMenuFlyout* colorMenu = new QWinUIMenuFlyout(this);
+    colorMenu->addItem("红色");
+    colorMenu->addItem("绿色");
+    colorMenu->addItem("蓝色");
+    colorMenu->addSeparator();
+    colorMenu->addItem("黄色");
+    colorMenu->addItem("橙色");
+    colorMenu->addItem("紫色");
+    colorMenu->addSeparator();
+    colorMenu->addItem("更多颜色...");
+
+    colorSplitButton->setFlyout(colorMenu);
+
+    // 连接信号
+    connect(colorSplitButton, &QWinUISplitButton::clicked, [this]() {
+        QColor color = QColorDialog::getColor(Qt::white, this, "选择颜色");
+        if (color.isValid()) {
+            m_titleLabel->setText(QString("选择了颜色：%1").arg(color.name()));
+        }
+    });
+
+    connect(colorMenu, &QWinUIMenuFlyout::itemClicked, [this](QWinUIMenuFlyoutItem* item) {
+        if (item->text() == "更多颜色...") {
+            QColor color = QColorDialog::getColor(Qt::white, this, "选择颜色");
+            if (color.isValid()) {
+                m_titleLabel->setText(QString("选择了颜色：%1").arg(color.name()));
+            }
+        } else {
+            m_titleLabel->setText(QString("选择了颜色：%1").arg(item->text()));
+        }
+        qDebug() << "Color menu item clicked:" << item->text();
+    });
+
+    splitButtonLayout->addWidget(colorSplitButton);
+
+    // 添加弹性空间
+    splitButtonLayout->addStretch();
+
+    // 将水平布局添加到主布局
+    m_layout->addLayout(splitButtonLayout);
+
+    // 添加说明文本
+    QLabel* descLabel = new QLabel("SplitButton 包含主按钮和下拉菜单两部分，点击主按钮执行默认操作，点击下拉箭头显示更多选项。", this);
+    descLabel->setWordWrap(true);
+    descLabel->setStyleSheet("color: #666; font-size: 12px; margin-top: 10px;");
+    m_layout->addWidget(descLabel);
 }

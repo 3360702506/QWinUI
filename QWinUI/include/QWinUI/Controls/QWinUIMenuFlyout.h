@@ -105,7 +105,7 @@ private:
     double m_hoverProgress;
     double m_pressProgress;
     
-    static constexpr int ITEM_HEIGHT = 32;
+    static constexpr int ITEM_HEIGHT = 40;
     static constexpr int ITEM_PADDING = 12;
     static constexpr int ICON_SIZE = 16;
     static constexpr int CHECK_SIZE = 16;
@@ -279,7 +279,7 @@ private:
     static constexpr int DEFAULT_MIN_WIDTH = 120;
     static constexpr int DEFAULT_MAX_WIDTH = 300;
     static constexpr int DEFAULT_ANIMATION_DURATION = 150;
-    static constexpr int MENU_PADDING = 4;
+    static constexpr int MENU_PADDING = 6;
     static constexpr int SUBMENU_DELAY = 300;
     static constexpr int SUBMENU_OFFSET = 4;
     static constexpr int SHADOW_BLUR_RADIUS = 16;

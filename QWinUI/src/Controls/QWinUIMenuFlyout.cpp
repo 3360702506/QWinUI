@@ -445,13 +445,18 @@ void QWinUIMenuFlyoutItem::mouseReleaseEvent(QMouseEvent* event)
         if (m_itemType == QWinUIMenuFlyoutItemType::SubMenu && m_subMenu) {
             emit subMenuRequested();
             // 子菜单项不触发triggered信号，避免关闭父菜单
+            // 也不调用基类的mouseReleaseEvent，避免其他信号
+            return;
         } else if (m_itemType == QWinUIMenuFlyoutItemType::Checkable) {
+            qDebug() << "QWinUIMenuFlyoutItem::mouseReleaseEvent - Checkable item triggered:" << text();
             setChecked(!m_checked);
             emit triggered();
         } else if (m_itemType == QWinUIMenuFlyoutItemType::Radio) {
+            qDebug() << "QWinUIMenuFlyoutItem::mouseReleaseEvent - Radio item triggered:" << text();
             setChecked(true);
             emit triggered();
         } else {
+            qDebug() << "QWinUIMenuFlyoutItem::mouseReleaseEvent - Normal item triggered:" << text();
             emit triggered();
         }
     }
@@ -551,7 +556,7 @@ void QWinUIMenuFlyout::initializeMenuFlyout()
     // 创建布局
     m_layout = new QVBoxLayout(this);
     m_layout->setContentsMargins(MENU_PADDING, MENU_PADDING, MENU_PADDING, MENU_PADDING);
-    m_layout->setSpacing(0);
+    m_layout->setSpacing(2); // 增加菜单项之间的间距
 
     // 暂时禁用阴影效果，避免与透明窗口冲突
     // setupShadowEffect();
@@ -631,7 +636,7 @@ QWinUIMenuFlyoutItem* QWinUIMenuFlyout::addItem(const QString& text, const QIcon
 
     // 设置菜单项样式
     item->setButtonStyle(QWinUIButton::Subtle);
-    item->setFixedHeight(32);
+    item->setFixedHeight(40); // 增加菜单项高度
 
     m_layout->addWidget(item);
     m_menuItems.append(item);
@@ -688,6 +693,9 @@ QWinUIMenuFlyout* QWinUIMenuFlyout::addSubMenu(const QString& text, const QIcon&
     connect(item, &QWinUIMenuFlyoutItem::subMenuRequested, this, &QWinUIMenuFlyout::onItemSubMenuRequested);
     connect(subMenu, &QWinUIMenuFlyout::aboutToShow, this, &QWinUIMenuFlyout::onSubMenuAboutToShow);
     connect(subMenu, &QWinUIMenuFlyout::aboutToHide, this, &QWinUIMenuFlyout::onSubMenuAboutToHide);
+
+    // 连接子菜单的itemClicked信号到父菜单，实现信号传递
+    connect(subMenu, &QWinUIMenuFlyout::itemClicked, this, &QWinUIMenuFlyout::itemClicked);
 
     updateLayout();
     return subMenu;
@@ -942,10 +950,23 @@ void QWinUIMenuFlyout::onItemTriggered()
 {
     QWinUIMenuFlyoutItem* item = qobject_cast<QWinUIMenuFlyoutItem*>(sender());
     if (item) {
+        qDebug() << "QWinUIMenuFlyout::onItemTriggered - Item text:" << item->text();
         emit itemClicked(item);
 
         if (m_autoClose && item->itemType() != QWinUIMenuFlyoutItemType::SubMenu) {
-            hide();
+            qDebug() << "QWinUIMenuFlyout::onItemTriggered - Closing menu";
+            // 如果这是子菜单，需要关闭整个菜单系统
+            if (m_parentMenu) {
+                // 递归找到根菜单并关闭
+                QWinUIMenuFlyout* rootMenu = this;
+                while (rootMenu->m_parentMenu) {
+                    rootMenu = rootMenu->m_parentMenu;
+                }
+                rootMenu->hide();
+            } else {
+                // 这是根菜单，直接关闭
+                hide();
+            }
         }
     }
 }
