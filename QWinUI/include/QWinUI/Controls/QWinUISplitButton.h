@@ -14,28 +14,8 @@
 #include "../QWinUIGlobal.h"
 #include "../QWinUIFluentIcons.h"
 #include "QWinUIButton.h"
+#include "QWinUIDropDownButton.h"
 #include "QWinUIMenuFlyout.h"
-
-// 自定义下拉按钮类，支持箭头动画
-class QWinUISplitDropDownButton : public QWinUIButton
-{
-    Q_OBJECT
-    Q_PROPERTY(double arrowOffset READ arrowOffset WRITE setArrowOffset)
-
-public:
-    explicit QWinUISplitDropDownButton(QWidget* parent = nullptr);
-
-    double arrowOffset() const { return m_arrowOffset; }
-    void setArrowOffset(double offset);
-
-protected:
-    void paintEvent(QPaintEvent* event) override;
-    void showEvent(QShowEvent* event) override;
-
-private:
-    double m_arrowOffset;
-    QFont m_fluentFont;
-};
 
 class QWINUI_EXPORT QWinUISplitButton : public QWinUIWidget
 {
@@ -111,7 +91,7 @@ private:
 private:
     // UI组件
     QWinUIButton* m_mainButton;
-    QWinUISplitDropDownButton* m_dropDownButton;
+    QWinUIDropDownButton* m_dropDownButton;
     QHBoxLayout* m_layout;
 
     // 基本属性

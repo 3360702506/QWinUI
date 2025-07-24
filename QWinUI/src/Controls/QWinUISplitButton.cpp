@@ -5,122 +5,7 @@
 #include <QPainter>
 #include <QFontDatabase>
 
-// QWinUISplitDropDownButton 实现
-QWinUISplitDropDownButton::QWinUISplitDropDownButton(QWidget* parent)
-    : QWinUIButton(parent)
-    , m_arrowOffset(0.0)
-{
-    // 设置Fluent Icons字体
-    QStringList fontFamilies = {"Segoe Fluent Icons", "Segoe UI Symbol", "Segoe UI", "Arial"};
 
-    for (const QString& family : fontFamilies) {
-        if (QFontDatabase::families().contains(family)) {
-            m_fluentFont = QFont(family);
-            break;
-        }
-    }
-
-    m_fluentFont.setPixelSize(10);
-    m_fluentFont.setWeight(QFont::Normal);
-
-    // 连接主题变化信号
-    QWinUITheme* theme = QWinUITheme::getInstance();
-    if (theme) {
-        connect(theme, &QWinUITheme::themeChanged, this, [this]() {
-            update(); // 主题变化时重新绘制
-        });
-
-        // 连接颜色变化信号
-        connect(theme, &QWinUITheme::colorChanged, this, [this](const QString& colorName, const QColor& color) {
-            Q_UNUSED(colorName)
-            Q_UNUSED(color)
-            update(); // 颜色变化时重新绘制
-        });
-
-    }
-}
-
-void QWinUISplitDropDownButton::setArrowOffset(double offset)
-{
-    if (qAbs(m_arrowOffset - offset) > 1e-6) {
-        m_arrowOffset = offset;
-        update(); // 触发重绘
-    }
-}
-
-void QWinUISplitDropDownButton::showEvent(QShowEvent* event)
-{
-    QWinUIButton::showEvent(event);
-
-    // 显示时立即获取并应用当前主题
-    QWinUITheme* theme = QWinUITheme::getInstance();
-    if (theme) {
-        update(); // 确保使用当前主题绘制
-    }
-}
-
-void QWinUISplitDropDownButton::paintEvent(QPaintEvent* event)
-{
-    // 先绘制按钮背景
-    QWinUIButton::paintEvent(event);
-
-    // 然后绘制箭头图标
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setRenderHint(QPainter::TextAntialiasing);
-
-    QWinUITheme* theme = QWinUITheme::getInstance();
-    if (!theme) return;
-
-    // 根据主题和按钮状态计算箭头颜色
-    QColor arrowColor;
-    if (!isEnabled()) {
-        // 禁用状态使用灰色
-        arrowColor = QColor(128, 128, 128, 255);
-    } else {
-        // 直接根据主题模式设置颜色，不依赖主题API
-        if (theme->isDarkMode()) {
-            // 深色主题使用白色
-            arrowColor = QColor(255, 255, 255, 255);
-        } else {
-            // 浅色主题使用黑色
-            arrowColor = QColor(0, 0, 0, 255);
-        }
-    }
-
-
-
-    // 设置字体和颜色
-    painter.setFont(m_fluentFont);
-    painter.setPen(QPen(arrowColor, 1));
-
-    // 计算箭头位置（加上动画偏移）
-    QRect arrowRect = rect();
-    arrowRect.translate(0, static_cast<int>(m_arrowOffset));
-
-    // 尝试绘制Fluent Icons字体的箭头
-    QString arrowText = QString(QWinUIFluentIcons::Arrows::CHEVRON_DOWN);
-
-    // 检查字体是否支持该字符
-    QFontMetrics fm(m_fluentFont);
-    if (fm.horizontalAdvance(arrowText) > 0 && fm.inFont(QWinUIFluentIcons::Arrows::CHEVRON_DOWN)) {
-        // 使用字体图标
-        painter.drawText(arrowRect, Qt::AlignCenter, arrowText);
-    } else {
-        // 绘制简单的三角形箭头作为备用
-        painter.setBrush(arrowColor);
-        painter.setPen(Qt::NoPen);
-
-        QPoint center = arrowRect.center();
-        int arrowSize = 4;
-        QPolygon arrow;
-        arrow << QPoint(center.x() - arrowSize, center.y() - arrowSize/2)
-              << QPoint(center.x() + arrowSize, center.y() - arrowSize/2)
-              << QPoint(center.x(), center.y() + arrowSize/2);
-
-        painter.drawPolygon(arrow);
-    }
-}
 
 // QWinUISplitButton 实现
 QWinUISplitButton::QWinUISplitButton(QWidget* parent)
@@ -180,7 +65,7 @@ void QWinUISplitButton::initializeButton()
     m_mainButton->setMinimumWidth(40); // 设置最小宽度防止重叠
 
     // 创建下拉按钮
-    m_dropDownButton = new QWinUISplitDropDownButton(this);
+    m_dropDownButton = new QWinUIDropDownButton(this);
     m_dropDownButton->setButtonStyle(QWinUIButton::Standard);
     m_dropDownButton->setFixedSize(DROPDOWN_WIDTH, BUTTON_HEIGHT);
 

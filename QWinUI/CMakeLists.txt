@@ -57,7 +57,9 @@ set(QWINUI_SOURCES
     src/Controls/QWinUIVariableSizedWrapGrid.cpp
     src/Controls/QWinUIMenuFlyout.cpp
     src/Controls/QWinUISplitButton.cpp
+    src/Controls/QWinUIDropDownButton.cpp
     src/Controls/QWinUISimpleCard.cpp
+    src/Controls/QWinUIContentDialog.cpp
     src/Controls/QWinUIRadioButton.cpp
     src/Controls/QWinUISlider.cpp
     src/Layouts/QWinUIFlowLayout.cpp
@@ -96,7 +98,9 @@ set(QWINUI_HEADERS
     include/QWinUI/Controls/QWinUIVariableSizedWrapGrid.h
     include/QWinUI/Controls/QWinUIMenuFlyout.h
     include/QWinUI/Controls/QWinUISplitButton.h
+    include/QWinUI/Controls/QWinUIDropDownButton.h
     include/QWinUI/Controls/QWinUISimpleCard.h
+    include/QWinUI/Controls/QWinUIContentDialog.h
     include/QWinUI/Controls/QWinUIRadioButton.h
     include/QWinUI/Controls/QWinUISlider.h
     include/QWinUI/Layouts/QWinUIFlowLayout.h
